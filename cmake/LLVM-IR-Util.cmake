@@ -1,11 +1,19 @@
+#.rst:
+#LLVM-IR-Util
+# -------------
+#
 # LLVM IR utils for cmake
+
+cmake_minimum_required(VERSION 2.8.11)
 
 set(LLVM_IR_UTIL_VERSION_MAJOR "1")
 set(LLVM_IR_UTIL_VERSION_MINOR "0")
-set(LLVM_IR_UTIL_VERSION_PATCH "0")
+set(LLVM_IR_UTIL_VERSION_PATCH "1")
 
-set(LLVM_IR_UTIL_VERSION_STRING
-  "${LLVM_IR_UTIL_VERSION_MAJOR}.${LLVM_IR_UTIL_VERSION_MINOR}.${LLVM_IR_UTIL_VERSION_PATCH}")
+string(CONCAT LLVM_IR_UTIL_VERSION
+  ${LLVM_IR_UTIL_VERSION_MAJOR} "."
+  ${LLVM_IR_UTIL_VERSION_MINOR} "."
+  ${LLVM_IR_UTIL_VERSION_PATCH})
 
 
 macro(LLVMIRSetup)
@@ -20,9 +28,89 @@ macro(LLVMIRSetup)
   set(LLVMIR_BINARY_FMT_SUFFIX "bc")
   set(LLVMIR_TEXT_FMT_SUFFIX "ll")
 
-  set(LLVMIR_TYPES LLVMIR_BINARY LLVMIR_TEXT)
+  set(LLVMIR_BINARY_TYPE "LLVMIR_BINARY")
+  set(LLVMIR_TEXT_TYPE "LLVMIR_TEXT")
+
+  set(LLVMIR_TYPES ${LLVMIR_BINARY_TYPE} ${LLVMIR_TEXT_TYPE})
   set(LLVMIR_FMT_SUFFICES ${LLVMIR_BINARY_FMT_SUFFIX} ${LLVMIR_TEXT_FMT_SUFFIX})
+
+  set(LLVMIR_COMPILER_IDS "Clang")
+
+  message(STATUS "LLVM IR Utils version: ${LLVM_IR_UTIL_VERSION}")
+
+  define_property(TARGET PROPERTY LLVMIR_TYPE
+    BRIEF_DOCS "type of LLVM IR file"
+    FULL_DOCS "type of LLVM IR file")
+  define_property(TARGET PROPERTY LLVMIR_DIR
+    BRIEF_DOCS "Input /output directory for LLVM IR files"
+    FULL_DOCS "Input /output directory for LLVM IR files")
+  define_property(TARGET PROPERTY LLVMIR_FILES
+    BRIEF_DOCS "list of LLVM IR files"
+    FULL_DOCS "list of LLVM IR files")
 endmacro()
+
+
+# internal utility macros/functions
+
+function(fatal message_txt)
+  message(FATAL_ERROR "${message_txt}")
+endfunction()
+
+
+macro(SetLLVMIRCompiler linker_language)
+  if("${LLVMIR_COMPILER}" STREQUAL "")
+    set(LLVMIR_COMPILER ${CMAKE_${linker_language}_COMPILER})
+    set(LLVMIR_COMPILER_ID ${CMAKE_${linker_language}_COMPILER_ID})
+
+    list(FIND LLVMIR_COMPILER_IDS ${LLVMIR_COMPILER_ID} found)
+
+    if(found EQUAL -1)
+      fatal("LLVM IR compiler ID ${LLVMIR_COMPILER_ID} is not in \
+      ${LLVMIR_COMPILER_IDS}")
+    endif()
+  endif()
+endmacro()
+
+
+function(CheckTargetProperties trgt)
+  if(NOT TARGET ${trgt})
+    fatal("Cannot attach to non-existing target: ${trgt}.")
+  endif()
+
+  foreach(prop ${ARGN})
+    # equivalent to
+    # if(DEFINED prop AND prop STREQUAL "")
+    set(is_def TRUE)
+    set(is_set TRUE)
+
+    # this seems to not be working for targets defined with builtins
+    #get_property(is_def TARGET ${trgt} PROPERTY ${prop} DEFINED)
+
+    get_property(is_set TARGET ${trgt} PROPERTY ${prop} SET)
+
+    if(NOT is_def)
+      fatal("property ${prop} for target ${trgt} must be defined.")
+    endif()
+
+    if(NOT is_set)
+      fatal("property ${prop} for target ${trgt} must be set.")
+    endif()
+  endforeach()
+endfunction()
+
+
+function(CheckNonLLVMIRTargetProperties trgt)
+  set(props SOURCES LINKER_LANGUAGE)
+
+  CheckTargetProperties(${trgt} ${props})
+endfunction()
+
+
+function(CheckLLVMIRTargetProperties trgt)
+  set(props LINKER_LANGUAGE LLVMIR_DIR LLVMIR_FILES LLVMIR_TYPE)
+
+  CheckTargetProperties(${trgt} ${props})
+endfunction()
 
 
 #
@@ -32,32 +120,30 @@ LLVMIRSetup()
 #
 
 function(attach_llvmir_target OUT_TRGT IN_TRGT)
-  ## preamble
-  set(WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
-  file(MAKE_DIRECTORY ${WORK_DIR})
+  message(DEPRECATION
+    "this function is deprecated, use attach_llvmir_bc_target instead")
 
+  attach_llvmir_bc_target(${OUT_TRGT} ${IN_TRGT})
+endfunction()
+
+#
+
+function(attach_llvmir_bc_target OUT_TRGT IN_TRGT)
+  ## preamble
   set(OUT_LLVMIR_FILES "")
   set(FULL_OUT_LLVMIR_FILES "")
+
+  CheckNonLLVMIRTargetProperties(${IN_TRGT})
+
+  # if the property does not exist the related variable is not defined
   get_property(IN_FILES TARGET ${IN_TRGT} PROPERTY SOURCES)
   get_property(LINKER_LANGUAGE TARGET ${IN_TRGT} PROPERTY LINKER_LANGUAGE)
-  get_property(IN_LLVMIR_TYPE TARGET ${IN_TRGT} PROPERTY LLVMIR_TYPE)
 
-  list(GET LLVMIR_TYPES 0 OUT_LLVMIR_TYPE)
-  list(GET LLVMIR_FMT_SUFFICES 0 OUT_LLVMIR_SUFFIX)
-
-  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "")
-    message(ERROR " Cannot attach ${OUT_TRGT} to an ${IN_LLVMIR_TYPE} target.")
-  endif()
-
-  if("${LINKER_LANGUAGE}" STREQUAL "")
-    message(ERROR " Linker language for target ${IN_TRGT} must be set.")
-  endif()
-
-  if("${LLVMIR_COMPILER}" STREQUAL "")
-    set(LLVMIR_COMPILER ${CMAKE_${LINKER_LANGUAGE}_COMPILER})
-  endif()
+  SetLLVMIRCompiler(${LINKER_LANGUAGE})
 
   ## command options
+  set(WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
+  file(MAKE_DIRECTORY ${WORK_DIR})
 
   # compile definitions
   set(SRC_DEFS "")
@@ -100,7 +186,7 @@ function(attach_llvmir_target OUT_TRGT IN_TRGT)
 
   # compile lang flags
   set(SRC_LANG_FLAGS_TMP ${CMAKE_${LINKER_LANGUAGE}_FLAGS_${CMAKE_BUILD_TYPE}})
-  if("${SRC_LANG_FLAGS_TMP}" STREQUAL "")
+  if(SRC_LANG_FLAGS_TMP STREQUAL "")
     set(SRC_LANG_FLAGS_TMP ${CMAKE_${LINKER_LANGUAGE}_FLAGS})
   endif()
 
@@ -131,11 +217,11 @@ function(attach_llvmir_target OUT_TRGT IN_TRGT)
 
   list(REMOVE_DUPLICATES SRC_INCLUDES)
 
-  ## main action
+  ## main operations
   foreach(IN_FILE ${IN_FILES})
     get_filename_component(OUTFILE ${IN_FILE} NAME_WE)
     get_filename_component(INFILE ${IN_FILE} ABSOLUTE)
-    set(OUT_LLVMIR_FILE "${OUTFILE}.${OUT_LLVMIR_SUFFIX}")
+    set(OUT_LLVMIR_FILE "${OUTFILE}.${LLVMIR_BINARY_FMT_SUFFIX}")
     set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${OUT_LLVMIR_FILE}")
 
     # compile definitions per source file
@@ -183,7 +269,7 @@ function(attach_llvmir_target OUT_TRGT IN_TRGT)
   # setup custom target
   add_custom_target(${OUT_TRGT} DEPENDS ${FULL_OUT_LLVMIR_FILES})
 
-  set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_TYPE ${OUT_LLVMIR_TYPE})
+  set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_TYPE ${LLVMIR_BINARY_TYPE})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_DIR ${WORK_DIR})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_FILES ${OUT_LLVMIR_FILES})
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
@@ -195,35 +281,34 @@ endfunction()
 
 function(attach_llvmir_opt_pass_target OUT_TRGT IN_TRGT)
   ## preamble
-  set(WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
-  file(MAKE_DIRECTORY ${WORK_DIR})
+  CheckLLVMIRTargetProperties(${IN_TRGT})
 
   set(OUT_LLVMIR_FILES "")
   set(FULL_OUT_LLVMIR_FILES "")
+
   get_property(IN_LLVMIR_DIR TARGET ${IN_TRGT} PROPERTY LLVMIR_DIR)
   get_property(IN_LLVMIR_FILES TARGET ${IN_TRGT} PROPERTY LLVMIR_FILES)
   get_property(LINKER_LANGUAGE TARGET ${IN_TRGT} PROPERTY LINKER_LANGUAGE)
   get_property(IN_LLVMIR_TYPE TARGET ${IN_TRGT} PROPERTY LLVMIR_TYPE)
 
-  list(GET LLVMIR_TYPES 0 OUT_LLVMIR_TYPE)
-  list(GET LLVMIR_FMT_SUFFICES 0 OUT_LLVMIR_SUFFIX)
-  list(GET LLVMIR_TYPES 0 IN_EXPECTED_LLVMIR_TYPE)
-
-  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${IN_EXPECTED_LLVMIR_TYPE}")
-    message(ERROR " Cannot attach ${OUT_TRGT} to a ${IN_LLVMIR_TYPE} target.")
+  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
+    fatal("Cannot attach ${OUT_TRGT} to target of type: ${IN_LLVMIR_TYPE}.")
   endif()
 
   if("${LINKER_LANGUAGE}" STREQUAL "")
-    message(ERROR " Linker language for target ${IN_TRGT} must be set.")
+    fatal("Linker language for target ${IN_TRGT} must be set.")
   endif()
+
+  ## main operations
+  set(WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
+  file(MAKE_DIRECTORY ${WORK_DIR})
 
   foreach(IN_LLVMIR_FILE ${IN_LLVMIR_FILES})
     get_filename_component(OUTFILE ${IN_LLVMIR_FILE} NAME_WE)
     set(INFILE "${IN_LLVMIR_DIR}/${IN_LLVMIR_FILE}")
-    set(OUT_LLVMIR_FILE "${OUTFILE}-${OUT_TRGT}.${OUT_LLVMIR_SUFFIX}")
+    set(OUT_LLVMIR_FILE "${OUTFILE}-${OUT_TRGT}.${LLVMIR_BINARY_FMT_SUFFIX}")
     set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${OUT_LLVMIR_FILE}")
 
-    ## main action
     add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
       COMMAND ${LLVMIR_OPT}
       ARGS ${ARGN} ${INFILE} -o ${FULL_OUT_LLVMIR_FILE}
@@ -236,7 +321,6 @@ function(attach_llvmir_opt_pass_target OUT_TRGT IN_TRGT)
   endforeach()
 
   ## postamble
-
   # clean up
   set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
     ${FULL_OUT_LLVMIR_FILES})
@@ -244,7 +328,7 @@ function(attach_llvmir_opt_pass_target OUT_TRGT IN_TRGT)
   # setup custom target
   add_custom_target(${OUT_TRGT} DEPENDS ${FULL_OUT_LLVMIR_FILES})
 
-  set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_TYPE ${OUT_LLVMIR_TYPE})
+  set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_TYPE ${LLVMIR_BINARY_TYPE})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_DIR ${WORK_DIR})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_FILES ${OUT_LLVMIR_FILES})
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
@@ -256,27 +340,23 @@ endfunction()
 
 function(attach_llvmir_disassemble_target OUT_TRGT IN_TRGT)
   ## preamble
-  set(WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
-  file(MAKE_DIRECTORY ${WORK_DIR})
+  CheckLLVMIRTargetProperties(${IN_TRGT})
 
   set(OUT_LLVMIR_FILES "")
   set(FULL_OUT_LLVMIR_FILES "")
+
   get_property(IN_LLVMIR_DIR TARGET ${IN_TRGT} PROPERTY LLVMIR_DIR)
   get_property(IN_LLVMIR_FILES TARGET ${IN_TRGT} PROPERTY LLVMIR_FILES)
   get_property(LINKER_LANGUAGE TARGET ${IN_TRGT} PROPERTY LINKER_LANGUAGE)
   get_property(IN_LLVMIR_TYPE TARGET ${IN_TRGT} PROPERTY LLVMIR_TYPE)
 
-  list(GET LLVMIR_TYPES 1 OUT_LLVMIR_TYPE)
-  list(GET LLVMIR_FMT_SUFFICES 1 OUT_LLVMIR_SUFFIX)
-  list(GET LLVMIR_TYPES 0 IN_EXPECTED_LLVMIR_TYPE)
-
-  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${IN_EXPECTED_LLVMIR_TYPE}")
-    message(ERROR " Cannot attach ${OUT_TRGT} to a ${IN_LLVMIR_TYPE} target.")
+  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
+    fatal("Cannot attach ${OUT_TRGT} to a ${IN_LLVMIR_TYPE} target.")
   endif()
 
-  if("${LINKER_LANGUAGE}" STREQUAL "")
-    message(ERROR " Linker language for target ${IN_TRGT} must be set.")
-  endif()
+  ## main operations
+  set(WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
+  file(MAKE_DIRECTORY ${WORK_DIR})
 
   foreach(IN_LLVMIR_FILE ${IN_LLVMIR_FILES})
     get_filename_component(OUTFILE ${IN_LLVMIR_FILE} NAME_WE)
@@ -284,7 +364,6 @@ function(attach_llvmir_disassemble_target OUT_TRGT IN_TRGT)
     set(OUT_LLVMIR_FILE "${OUTFILE}.${LLVMIR_TEXT_FMT_SUFFIX}")
     set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${OUT_LLVMIR_FILE}")
 
-    ## main action
     add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
       COMMAND ${LLVMIR_DISASSEMBLER}
       ARGS ${ARGN} ${INFILE} -o ${FULL_OUT_LLVMIR_FILE}
@@ -305,7 +384,7 @@ function(attach_llvmir_disassemble_target OUT_TRGT IN_TRGT)
   # setup custom target
   add_custom_target(${OUT_TRGT} DEPENDS ${FULL_OUT_LLVMIR_FILES})
 
-  set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_TYPE ${OUT_LLVMIR_TYPE})
+  set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_TYPE ${LLVMIR_TEXT_TYPE})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_DIR ${WORK_DIR})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_FILES ${OUT_LLVMIR_FILES})
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
@@ -317,35 +396,30 @@ endfunction()
 
 function(attach_llvmir_assemble_target OUT_TRGT IN_TRGT)
   ## preamble
-  set(WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
-  file(MAKE_DIRECTORY ${WORK_DIR})
+  CheckLLVMIRTargetProperties(${IN_TRGT})
 
   set(OUT_LLVMIR_FILES "")
   set(FULL_OUT_LLVMIR_FILES "")
+
   get_property(IN_LLVMIR_DIR TARGET ${IN_TRGT} PROPERTY LLVMIR_DIR)
   get_property(IN_LLVMIR_FILES TARGET ${IN_TRGT} PROPERTY LLVMIR_FILES)
   get_property(LINKER_LANGUAGE TARGET ${IN_TRGT} PROPERTY LINKER_LANGUAGE)
   get_property(IN_LLVMIR_TYPE TARGET ${IN_TRGT} PROPERTY LLVMIR_TYPE)
 
-  list(GET LLVMIR_TYPES 0 OUT_LLVMIR_TYPE)
-  list(GET LLVMIR_FMT_SUFFICES 0 OUT_LLVMIR_SUFFIX)
-  list(GET LLVMIR_TYPES 1 IN_EXPECTED_LLVMIR_TYPE)
-
-  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${IN_EXPECTED_LLVMIR_TYPE}")
-    message(ERROR " Cannot attach ${OUT_TRGT} to a ${IN_LLVMIR_TYPE} target.")
+  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_TEXT_TYPE}")
+    fatal("Cannot attach ${OUT_TRGT} to a ${IN_LLVMIR_TYPE} target.")
   endif()
 
-  if("${LINKER_LANGUAGE}" STREQUAL "")
-    message(ERROR " Linker language for target ${IN_TRGT} must be set.")
-  endif()
+  ## main operations
+  set(WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
+  file(MAKE_DIRECTORY ${WORK_DIR})
 
   foreach(IN_LLVMIR_FILE ${IN_LLVMIR_FILES})
     get_filename_component(OUTFILE ${IN_LLVMIR_FILE} NAME_WE)
     set(INFILE "${IN_LLVMIR_DIR}/${IN_LLVMIR_FILE}")
-    set(OUT_LLVMIR_FILE "${OUTFILE}.${OUT_LLVMIR_SUFFIX}")
+    set(OUT_LLVMIR_FILE "${OUTFILE}.${LLVMIR_BINARY_FMT_SUFFIX}")
     set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${OUT_LLVMIR_FILE}")
 
-    ## main action
     add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
       COMMAND ${LLVMIR_ASSEMBLER}
       ARGS ${ARGN} ${INFILE} -o ${FULL_OUT_LLVMIR_FILE}
@@ -366,7 +440,7 @@ function(attach_llvmir_assemble_target OUT_TRGT IN_TRGT)
   # setup custom target
   add_custom_target(${OUT_TRGT} DEPENDS ${FULL_OUT_LLVMIR_FILES})
 
-  set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_TYPE ${OUT_LLVMIR_TYPE})
+  set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_TYPE ${LLVMIR_BINARY_TYPE})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_DIR ${WORK_DIR})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_FILES ${OUT_LLVMIR_FILES})
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
@@ -378,27 +452,23 @@ endfunction()
 
 function(attach_llvmir_link_target OUT_TRGT IN_TRGT)
   ## preamble
-  set(WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
-  file(MAKE_DIRECTORY ${WORK_DIR})
+  CheckLLVMIRTargetProperties(${IN_TRGT})
 
   set(OUT_LLVMIR_FILES "")
   set(FULL_OUT_LLVMIR_FILES "")
+
   get_property(INFILES TARGET ${IN_TRGT} PROPERTY LLVMIR_FILES)
   get_property(IN_LLVMIR_DIR TARGET ${IN_TRGT} PROPERTY LLVMIR_DIR)
   get_property(LINKER_LANGUAGE TARGET ${IN_TRGT} PROPERTY LINKER_LANGUAGE)
   get_property(IN_LLVMIR_TYPE TARGET ${IN_TRGT} PROPERTY LLVMIR_TYPE)
 
-  list(GET LLVMIR_TYPES 0 OUT_LLVMIR_TYPE)
-  list(GET LLVMIR_FMT_SUFFICES 0 OUT_LLVMIR_SUFFIX)
-  list(GET LLVMIR_TYPES 0 IN_EXPECTED_LLVMIR_TYPE)
-
-  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${IN_EXPECTED_LLVMIR_TYPE}")
-    message(ERROR " Cannot attach ${OUT_TRGT} to a ${IN_LLVMIR_TYPE} target.")
+  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
+    fatal("Cannot attach ${OUT_TRGT} to a ${IN_LLVMIR_TYPE} target.")
   endif()
 
-  if("${LINKER_LANGUAGE}" STREQUAL "")
-    message(ERROR " Linker language for target ${IN_TRGT} must be set.")
-  endif()
+  ## main operations
+  set(WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
+  file(MAKE_DIRECTORY ${WORK_DIR})
 
   set(IN_FULL_LLVMIR_FILES "")
   foreach(IN_LLVMIR_FILE ${INFILES})
@@ -414,14 +484,13 @@ function(attach_llvmir_link_target OUT_TRGT IN_TRGT)
   # setup custom target
   add_custom_target(${OUT_TRGT} DEPENDS ${FULL_OUT_LLVMIR_FILES})
 
-  set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_TYPE ${OUT_LLVMIR_TYPE})
+  set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_TYPE ${LLVMIR_BINARY_TYPE})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_DIR ${WORK_DIR})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_FILES ${OUT_LLVMIR_FILES})
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
 
   add_dependencies(${IN_TRGT} ${OUT_TRGT})
 
-  ## main action
   add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
     COMMAND llvm-link
     ARGS ${ARGN} -o ${FULL_OUT_LLVMIR_FILE} ${IN_FULL_LLVMIR_FILES}
@@ -438,30 +507,27 @@ endfunction()
 
 function(attach_llvmir_executable OUT_TRGT IN_TRGT)
   ## preamble
-  set(OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
-  file(MAKE_DIRECTORY "${OUT_DIR}")
+  CheckLLVMIRTargetProperties(${IN_TRGT})
 
   get_property(INFILES TARGET ${IN_TRGT} PROPERTY LLVMIR_FILES)
   get_property(IN_LLVMIR_DIR TARGET ${IN_TRGT} PROPERTY LLVMIR_DIR)
   get_property(LINKER_LANGUAGE TARGET ${IN_TRGT} PROPERTY LINKER_LANGUAGE)
   get_property(IN_LLVMIR_TYPE TARGET ${IN_TRGT} PROPERTY LLVMIR_TYPE)
 
-  list(GET LLVMIR_TYPES 0 IN_EXPECTED_LLVMIR_TYPE)
-
-  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${IN_EXPECTED_LLVMIR_TYPE}")
-    message(ERROR " Cannot attach ${OUT_TRGT} to a ${IN_LLVMIR_TYPE} target.")
+  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
+    fatal("Cannot attach ${OUT_TRGT} to a ${IN_LLVMIR_TYPE} target.")
   endif()
 
-  if("${LINKER_LANGUAGE}" STREQUAL "")
-    message(ERROR " Linker language for target ${IN_TRGT} must be set.")
-  endif()
+  ## main operations
+  set(OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
+  file(MAKE_DIRECTORY "${OUT_DIR}")
 
   set(IN_FULL_LLVMIR_FILES "")
   foreach(IN_LLVMIR_FILE ${INFILES})
     list(APPEND IN_FULL_LLVMIR_FILES "${IN_LLVMIR_DIR}/${IN_LLVMIR_FILE}")
   endforeach()
 
-  add_executable(${OUT_TRGT} "${ARGN}" "${IN_FULL_LLVMIR_FILES}")
+  add_executable(${OUT_TRGT} ${ARGN} ${IN_FULL_LLVMIR_FILES})
 
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
   set_property(TARGET ${OUT_TRGT} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${OUT_DIR})
@@ -480,30 +546,27 @@ endfunction()
 
 function(attach_llvmir_library OUT_TRGT IN_TRGT)
   ## preamble
-  set(OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
-  file(MAKE_DIRECTORY "${OUT_DIR}")
+  CheckLLVMIRTargetProperties(${IN_TRGT})
 
   get_property(INFILES TARGET ${IN_TRGT} PROPERTY LLVMIR_FILES)
   get_property(IN_LLVMIR_DIR TARGET ${IN_TRGT} PROPERTY LLVMIR_DIR)
   get_property(LINKER_LANGUAGE TARGET ${IN_TRGT} PROPERTY LINKER_LANGUAGE)
   get_property(IN_LLVMIR_TYPE TARGET ${IN_TRGT} PROPERTY LLVMIR_TYPE)
 
-  list(GET LLVMIR_TYPES 0 IN_EXPECTED_LLVMIR_TYPE)
-
-  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${IN_EXPECTED_LLVMIR_TYPE}")
-    message(ERROR " Cannot attach ${OUT_TRGT} to a ${IN_LLVMIR_TYPE} target.")
+  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
+    fatal("Cannot attach ${OUT_TRGT} to a ${IN_LLVMIR_TYPE} target.")
   endif()
 
-  if("${LINKER_LANGUAGE}" STREQUAL "")
-    message(ERROR " Linker language for target ${IN_TRGT} must be set.")
-  endif()
+  ## main operations
+  set(OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
+  file(MAKE_DIRECTORY "${OUT_DIR}")
 
   set(IN_FULL_LLVMIR_FILES "")
   foreach(IN_LLVMIR_FILE ${INFILES})
     list(APPEND IN_FULL_LLVMIR_FILES "${IN_LLVMIR_DIR}/${IN_LLVMIR_FILE}")
   endforeach()
 
-  add_library(${OUT_TRGT} "${ARGN}" "${IN_FULL_LLVMIR_FILES}")
+  add_library(${OUT_TRGT} ${ARGN} ${IN_FULL_LLVMIR_FILES})
 
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
   set_property(TARGET ${OUT_TRGT} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${OUT_DIR})
