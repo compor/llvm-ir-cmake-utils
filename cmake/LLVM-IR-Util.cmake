@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 2.8.11)
 
 set(LLVM_IR_UTIL_VERSION_MAJOR "1")
 set(LLVM_IR_UTIL_VERSION_MINOR "0")
-set(LLVM_IR_UTIL_VERSION_PATCH "1")
+set(LLVM_IR_UTIL_VERSION_PATCH "2")
 
 string(CONCAT LLVM_IR_UTIL_VERSION
   ${LLVM_IR_UTIL_VERSION_MAJOR} "."
@@ -55,6 +55,21 @@ endmacro()
 function(fatal message_txt)
   message(FATAL_ERROR "${message_txt}")
 endfunction()
+
+
+function(debug message_txt)
+  if($ENV{LLVMIR_CMAKE_DEBUG})
+    message(STATUS "[DEBUG] ${message_txt}")
+  endif()
+endfunction()
+
+
+macro(catuniq lst)
+  list(APPEND ${lst} ${ARGN})
+  if(${lst})
+    list(REMOVE_DUPLICATES ${lst})
+  endif()
+endmacro()
 
 
 macro(SetLLVMIRCompiler linker_language)
@@ -113,6 +128,155 @@ function(CheckLLVMIRTargetProperties trgt)
 endfunction()
 
 
+function(ExtractCompileDefsProperties out_compile_defs from)
+  set(defs "")
+  set(compile_defs "")
+  set(prop_name "COMPILE_DEFINITIONS")
+
+  # per directory
+  get_property(defs DIRECTORY PROPERTY ${prop_name})
+  foreach(def ${defs})
+    list(APPEND compile_defs -D${def})
+  endforeach()
+
+  get_property(defs DIRECTORY PROPERTY ${prop_name}_${CMAKE_BUILD_TYPE})
+  foreach(def ${defs})
+    list(APPEND compile_defs -D${def})
+  endforeach()
+
+  # per target
+  if(TARGET ${from})
+    get_property(defs TARGET ${from} PROPERTY ${prop_name})
+    foreach(def ${defs})
+      list(APPEND compile_defs -D${def})
+    endforeach()
+
+    get_property(defs TARGET ${from} PROPERTY ${prop_name}_${CMAKE_BUILD_TYPE})
+    foreach(def ${defs})
+      list(APPEND compile_defs -D${def})
+    endforeach()
+
+    get_property(defs TARGET ${from} PROPERTY INTERFACE_${prop_name})
+    foreach(def ${defs})
+      list(APPEND compile_defs -D${def})
+    endforeach()
+  else()
+    # per file
+    get_property(defs SOURCE ${from} PROPERTY ${prop_name})
+    foreach(def ${defs})
+      list(APPEND compile_defs -D${def})
+    endforeach()
+
+    get_property(defs SOURCE ${from} PROPERTY ${prop_name}_${CMAKE_BUILD_TYPE})
+    foreach(def ${defs})
+      list(APPEND compile_defs -D${def})
+    endforeach()
+  endif()
+
+  list(REMOVE_DUPLICATES compile_defs)
+
+  debug("@ExtractCompileDefsProperties ${from}: ${compile_defs}")
+
+  set(${out_compile_defs} ${compile_defs} PARENT_SCOPE)
+endfunction()
+
+
+function(ExtractCompileOptionProperties out_compile_options trgt)
+  set(options "")
+  set(compile_options "")
+  set(prop_name "COMPILE_OPTIONS")
+
+  # per directory
+  get_property(options DIRECTORY PROPERTY ${prop_name})
+  foreach(opt ${options})
+    list(APPEND compile_options ${opt})
+  endforeach()
+
+  # per target
+  get_property(options TARGET ${trgt} PROPERTY ${prop_name})
+  foreach(opt ${options})
+    list(APPEND compile_options ${opt})
+  endforeach()
+
+  get_property(options TARGET ${trgt} PROPERTY INTERFACE_${prop_name})
+  foreach(opt ${options})
+    list(APPEND compile_options ${opt})
+  endforeach()
+
+  list(REMOVE_DUPLICATES compile_options)
+
+  debug("@ExtractCompileOptionProperties ${trgt}: ${compile_options}")
+
+  set(${out_compile_options} ${compile_options} PARENT_SCOPE)
+endfunction()
+
+
+function(ExtractIncludeDirsProperties out_include_dirs trgt)
+  set(dirs "")
+  set(prop_name "INCLUDE_DIRECTORIES")
+
+  # per directory
+  get_property(dirs DIRECTORY PROPERTY ${prop_name})
+  foreach(dir ${dirs})
+    list(APPEND include_dirs -I${dir})
+  endforeach()
+
+  # per target
+  get_property(dirs TARGET ${trgt} PROPERTY ${prop_name})
+  foreach(dir ${dirs})
+    list(APPEND include_dirs -I${dir})
+  endforeach()
+
+  get_property(dirs TARGET ${trgt} PROPERTY INTERFACE_${prop_name})
+  foreach(dir ${dirs})
+    list(APPEND include_dirs -I${dir})
+  endforeach()
+
+  get_property(dirs TARGET ${trgt} PROPERTY INTERFACE_SYSTEM_${prop_name})
+  foreach(dir ${dirs})
+    list(APPEND include_dirs -I${dir})
+  endforeach()
+
+  list(REMOVE_DUPLICATES include_dirs)
+
+  debug("@ExtractIncludeDirsProperties ${trgt}: ${include_dirs}")
+
+  set(${out_include_dirs} ${include_dirs} PARENT_SCOPE)
+endfunction()
+
+
+function(ExtractLangFlags out_lang_flags lang)
+  set(lang_flags "")
+
+  list(APPEND lang_flags ${CMAKE_${lang}_FLAGS_${CMAKE_BUILD_TYPE}})
+  list(APPEND lang_flags ${CMAKE_${lang}_FLAGS})
+
+  list(REMOVE_DUPLICATES lang_flags)
+
+  debug("@ExtractLangFlags ${lang}: ${lang_flags}")
+
+  set(${out_lang_flags} ${out_lang_flags_tmp} PARENT_SCOPE)
+endfunction()
+
+
+function(ExtractCompileFlags out_compile_flags from)
+  #message(DEPRECATION "COMPILE_FLAGS property is deprecated.")
+
+  set(compile_flags "")
+  set(prop_name "COMPILE_FLAGS")
+
+  # deprecated according to cmake docs
+  if(TARGET ${from})
+    get_property(compile_flags TARGET ${from} PROPERTY ${prop_name})
+  else()
+    get_property(compile_flags SOURCE ${from} PROPERTY ${prop_name})
+  endif()
+
+  debug("@ExtractCompileFlags ${from}: ${compile_flags}")
+
+  set(${out_compile_flags} ${compile_flags} PARENT_SCOPE)
+endfunction()
+
 #
 
 LLVMIRSetup()
@@ -139,6 +303,8 @@ function(attach_llvmir_bc_target OUT_TRGT IN_TRGT)
   get_property(IN_FILES TARGET ${IN_TRGT} PROPERTY SOURCES)
   get_property(LINKER_LANGUAGE TARGET ${IN_TRGT} PROPERTY LINKER_LANGUAGE)
 
+  debug("@attach_llvmir_bc_target ${IN_TRGT} linker lang: ${LINKER_LANGUAGE}")
+
   SetLLVMIRCompiler(${LINKER_LANGUAGE})
 
   ## command options
@@ -146,76 +312,19 @@ function(attach_llvmir_bc_target OUT_TRGT IN_TRGT)
   file(MAKE_DIRECTORY ${WORK_DIR})
 
   # compile definitions
-  set(SRC_DEFS "")
-
-  # per directory
-  get_property(SRC_DEFS_TMP DIRECTORY PROPERTY COMPILE_DEFINITIONS)
-  foreach(DEF ${SRC_DEFS_TMP})
-    list(APPEND SRC_DEFS -D${DEF})
-  endforeach()
-
-  get_property(SRC_DEFS_TMP DIRECTORY PROPERTY
-    COMPILE_DEFINITIONS_${CMAKE_BUILD_TYPE})
-  foreach(DEF ${SRC_DEFS_TMP})
-    list(APPEND SRC_DEFS -D${DEF})
-  endforeach()
-
-  # per target
-  get_property(SRC_DEFS_TMP TARGET ${IN_TRGT} PROPERTY COMPILE_DEFINITIONS)
-  foreach(DEF ${SRC_DEFS_TMP})
-    list(APPEND SRC_DEFS -D${DEF})
-  endforeach()
-
-  get_property(SRC_DEFS_TMP TARGET ${IN_TRGT} PROPERTY
-    COMPILE_DEFINITIONS_${CMAKE_BUILD_TYPE})
-  foreach(DEF ${SRC_DEFS_TMP})
-    list(APPEND SRC_DEFS -D${DEF})
-  endforeach()
-
-  get_property(SRC_DEFS_TMP TARGET ${IN_TRGT} PROPERTY
-    INTERFACE_COMPILE_DEFINITIONS)
-  foreach(DEF ${SRC_DEFS_TMP})
-    list(APPEND SRC_DEFS -D${DEF})
-  endforeach()
-
-  list(REMOVE_DUPLICATES SRC_DEFS)
-
-  # compile options
-  set(SRC_COMPILE_OPTIONS "")
-  get_property(SRC_COMPILE_OPTIONS TARGET ${IN_TRGT} PROPERTY COMPILE_OPTIONS)
-
-  # compile lang flags
-  set(SRC_LANG_FLAGS_TMP ${CMAKE_${LINKER_LANGUAGE}_FLAGS_${CMAKE_BUILD_TYPE}})
-  if(SRC_LANG_FLAGS_TMP STREQUAL "")
-    set(SRC_LANG_FLAGS_TMP ${CMAKE_${LINKER_LANGUAGE}_FLAGS})
-  endif()
-
-  # this transforms the string to a list and gets rid of the double quotes
-  # when assembling the command arguments
-  string(REPLACE " " ";" SRC_LANG_FLAGS "${SRC_LANG_FLAGS_TMP}")
-
-  # compile flags
-  # deprecated according to cmake docs
-  get_property(SRC_FLAGS_TMP TARGET ${IN_TRGT} PROPERTY COMPILE_FLAGS)
-
-  # this transforms the string to a list and gets rid of the double quotes
-  # when assembling the command arguments
-  string(REPLACE " " ";" SRC_FLAGS "${SRC_FLAGS_TMP}")
+  ExtractCompileDefsProperties(IN_DEFS ${IN_TRGT})
 
   # includes
-  set(SRC_INCLUDES "")
+  ExtractIncludeDirsProperties(IN_INCLUDES ${IN_TRGT})
 
-  get_property(INC_DIRS TARGET ${IN_TRGT} PROPERTY INCLUDE_DIRECTORIES)
-  foreach(DIR ${INC_DIRS})
-    list(APPEND SRC_INCLUDES -I${DIR})
-  endforeach()
+  # compile options
+  ExtractCompileOptionProperties(IN_COMPILE_OPTIONS ${IN_TRGT})
 
-  get_property(INC_DIRS TARGET ${IN_TRGT} PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-  foreach(DIR ${INC_DIRS})
-    list(APPEND SRC_INCLUDES -I${DIR})
-  endforeach()
+  # compile flags
+  ExtractCompileFlags(IN_COMPILE_FLAGS ${IN_TRGT})
 
-  list(REMOVE_DUPLICATES SRC_INCLUDES)
+  # compile lang flags
+  ExtractLangFlags(IN_LANG_FLAGS ${LINKER_LANGUAGE})
 
   ## main operations
   foreach(IN_FILE ${IN_FILES})
@@ -225,29 +334,21 @@ function(attach_llvmir_bc_target OUT_TRGT IN_TRGT)
     set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${OUT_LLVMIR_FILE}")
 
     # compile definitions per source file
-    set(SRC_FILE_DEFS "")
-
-    get_property(SRC_DEFS_TMP SOURCE ${INFILE} PROPERTY COMPILE_DEFINITIONS)
-    foreach(DEF ${SRC_DEFS_TMP})
-      list(APPEND SRC_FILE_DEFS -D${DEF})
-    endforeach()
-
-    get_property(SRC_DEFS_TMP SOURCE ${IN_TRGT} PROPERTY
-      COMPILE_DEFINITIONS_${CMAKE_BUILD_TYPE})
-    foreach(DEF ${SRC_DEFS_TMP})
-      list(APPEND SRC_FILE_DEFS -D${DEF})
-    endforeach()
+    ExtractCompileDefsProperties(IN_FILE_DEFS ${IN_FILE})
 
     # compile flags per source file
-    get_property(SRC_FLAGS_TMP SOURCE ${INFILE} PROPERTY COMPILE_FLAGS)
-
-    # this transforms the string to a list and gets rid of the double quotes
-    # when assembling the command arguments
-    string(REPLACE " " ";" SRC_FILE_FLAGS "${SRC_FLAGS_TMP}")
+    ExtractCompileFlags(IN_FILE_COMPILE_FLAGS ${IN_FILE})
 
     # stitch all args together
-    set(CMD_ARGS -emit-llvm ${SRC_LANG_FLAGS} ${SRC_FLAGS} ${SRC_COMPILE_OPTIONS}
-      ${SRC_FILE_FLAGS} ${SRC_FILE_DEFS} ${SRC_DEFS} ${SRC_INCLUDES})
+    catuniq(CURRENT_DEFS ${IN_DEFS} ${IN_FILE_DEFS})
+    debug("@attach_llvmir_bc_target ${IN_TRGT} defs: ${CURRENT_DEFS}")
+
+    catuniq(CURRENT_COMPILE_FLAGS ${IN_COMPILE_FLAGS} ${IN_FILE_COMPILE_FLAGS})
+    debug("@attach_llvmir_bc_target ${IN_TRGT} compile flags: \
+      ${CURRENT_COMPILE_FLAGS}")
+
+    set(CMD_ARGS "-emit-llvm" ${IN_LANG_FLAGS} ${IN_COMPILE_OPTIONS}
+      ${CURRENT_COMPILE_FLAGS} ${CURRENT_DEFS} ${IN_INCLUDES})
 
     add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
       COMMAND ${LLVMIR_COMPILER}

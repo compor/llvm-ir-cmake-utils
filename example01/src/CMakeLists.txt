@@ -1,5 +1,10 @@
 # cmake file
 
+# options
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+
+
 # general defs
 
 set(SOURCES
@@ -11,6 +16,8 @@ set(SOURCES
 
 add_definitions(-DDIR_FOO=1)
 
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../include/general")
+
 
 # target level
 
@@ -20,10 +27,17 @@ add_executable(qux ${SOURCES})
 set_target_properties(qux PROPERTIES LINKER_LANGUAGE CXX)
 
 target_compile_definitions(qux PUBLIC TARGET_PUB_FOO=2)
-target_compile_definitions(qux INTERFACE TARGET_IF_FOO=3)
+target_compile_definitions(qux INTERFACE TARGET_PRIV_FOO=3)
+target_compile_definitions(qux INTERFACE TARGET_IF_FOO=4)
 
-target_include_directories(qux 
-  PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/../include")
+target_compile_options(qux PUBLIC -Wnonnull)
+target_compile_options(qux PRIVATE -Wfloat-conversion)
+target_compile_options(qux INTERFACE -Wpedantic)
+
+target_include_directories(qux PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/../include/detail")
+target_include_directories(qux PUBLIC 
+  "${CMAKE_CURRENT_SOURCE_DIR}/../include")
 
 
 # attachments on first target
