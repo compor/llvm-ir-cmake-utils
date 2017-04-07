@@ -22,13 +22,17 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../include/general")
 # target level
 
 add_executable(qux ${SOURCES})
+#add_library(qux ${SOURCES})
 
 # this property is required by our parasitic targets
 set_target_properties(qux PROPERTIES LINKER_LANGUAGE CXX)
 
 target_compile_definitions(qux PUBLIC TARGET_PUB_FOO=2)
-target_compile_definitions(qux INTERFACE TARGET_PRIV_FOO=3)
-target_compile_definitions(qux INTERFACE TARGET_IF_FOO=4)
+target_compile_definitions(qux PRIVATE TARGET_PRIV_FOO=3)
+
+# this seems not to be used in add_executable/add_library
+#target_compile_definitions(qux INTERFACE TARGET_IF_FOO=4)
+target_compile_definitions(qux PUBLIC TARGET_IF_FOO=4)
 
 target_compile_options(qux PUBLIC -Wnonnull)
 target_compile_options(qux PRIVATE -Wfloat-conversion)
