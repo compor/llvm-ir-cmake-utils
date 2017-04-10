@@ -47,21 +47,44 @@ target_include_directories(qux PUBLIC
 # attachments on first target
 
 attach_llvmir_bc_target(qux_bc qux)
+add_dependencies(qux_bc qux)
 
 attach_llvmir_opt_pass_target(qux_pass1 qux_bc -mem2reg)
+add_dependencies(qux_pass1 qux_bc)
+
 attach_llvmir_opt_pass_target(qux_pass2 qux_pass1 -simplifycfg -licm)
+add_dependencies(qux_pass2 qux_pass1)
+
 attach_llvmir_opt_pass_target(qux_pass3 qux_pass2 -licm)
+add_dependencies(qux_pass3 qux_pass2)
 
 attach_llvmir_disassemble_target(qux_dis qux_pass2)
+add_dependencies(qux_dis qux_pass2)
+
 attach_llvmir_assemble_target(qux_as qux_dis)
+add_dependencies(qux_as qux_dis)
 
 attach_llvmir_link_target(qux_llvmlink qux_pass2)
+add_dependencies(qux_llvmlink qux_pass2)
 
 attach_llvmir_opt_pass_target(qux_pass4 qux_llvmlink -simplifycfg)
+add_dependencies(qux_pass4 qux_llvmlink)
 
 attach_llvmir_executable(qux_bc_exe qux_pass4)
+add_dependencies(qux_bc_exe qux_pass4)
+
 attach_llvmir_executable(qux_bc_exe2 qux_pass2)
+add_dependencies(qux_bc_exe2 qux_pass2)
 
 attach_llvmir_library(qux_bc_lib qux_pass2 SHARED)
+add_dependencies(qux_bc_lib qux_pass2)
 
+
+add_custom_target(qux_pipeline1 DEPENDS 
+  qux_pass1)
+
+add_custom_target(qux_pipeline2 DEPENDS 
+  qux_pass2)
+
+set_property(TARGET qux_pipeline2 PROPERTY EXCLUDE_FROM_ALL Off)
 

@@ -6,7 +6,7 @@
 
 cmake_minimum_required(VERSION 2.8.11)
 
-set(LLVM_IR_UTIL_VERSION_MAJOR "1")
+set(LLVM_IR_UTIL_VERSION_MAJOR "2")
 set(LLVM_IR_UTIL_VERSION_MINOR "0")
 set(LLVM_IR_UTIL_VERSION_PATCH "2")
 
@@ -283,15 +283,6 @@ LLVMIRSetup()
 
 #
 
-function(attach_llvmir_target OUT_TRGT IN_TRGT)
-  message(DEPRECATION
-    "this function is deprecated, use attach_llvmir_bc_target instead")
-
-  attach_llvmir_bc_target(${OUT_TRGT} ${IN_TRGT})
-endfunction()
-
-#
-
 function(attach_llvmir_bc_target OUT_TRGT IN_TRGT)
   ## preamble
   set(OUT_LLVMIR_FILES "")
@@ -374,8 +365,7 @@ function(attach_llvmir_bc_target OUT_TRGT IN_TRGT)
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_DIR ${WORK_DIR})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_FILES ${OUT_LLVMIR_FILES})
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
-
-  add_dependencies(${IN_TRGT} ${OUT_TRGT})
+  set_property(TARGET ${OUT_TRGT} PROPERTY EXCLUDE_FROM_ALL On)
 endfunction()
 
 #
@@ -433,8 +423,7 @@ function(attach_llvmir_opt_pass_target OUT_TRGT IN_TRGT)
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_DIR ${WORK_DIR})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_FILES ${OUT_LLVMIR_FILES})
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
-
-  add_dependencies(${IN_TRGT} ${OUT_TRGT})
+  set_property(TARGET ${OUT_TRGT} PROPERTY EXCLUDE_FROM_ALL On)
 endfunction()
 
 #
@@ -489,8 +478,7 @@ function(attach_llvmir_disassemble_target OUT_TRGT IN_TRGT)
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_DIR ${WORK_DIR})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_FILES ${OUT_LLVMIR_FILES})
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
-
-  add_dependencies(${IN_TRGT} ${OUT_TRGT})
+  set_property(TARGET ${OUT_TRGT} PROPERTY EXCLUDE_FROM_ALL On)
 endfunction()
 
 #
@@ -545,8 +533,7 @@ function(attach_llvmir_assemble_target OUT_TRGT IN_TRGT)
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_DIR ${WORK_DIR})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_FILES ${OUT_LLVMIR_FILES})
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
-
-  add_dependencies(${IN_TRGT} ${OUT_TRGT})
+  set_property(TARGET ${OUT_TRGT} PROPERTY EXCLUDE_FROM_ALL On)
 endfunction()
 
 #
@@ -589,8 +576,7 @@ function(attach_llvmir_link_target OUT_TRGT IN_TRGT)
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_DIR ${WORK_DIR})
   set_property(TARGET ${OUT_TRGT} PROPERTY LLVMIR_FILES ${OUT_LLVMIR_FILES})
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
-
-  add_dependencies(${IN_TRGT} ${OUT_TRGT})
+  set_property(TARGET ${OUT_TRGT} PROPERTY EXCLUDE_FROM_ALL On)
 
   add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
     COMMAND llvm-link
@@ -632,13 +618,12 @@ function(attach_llvmir_executable OUT_TRGT IN_TRGT)
 
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
   set_property(TARGET ${OUT_TRGT} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${OUT_DIR})
+  set_property(TARGET ${OUT_TRGT} PROPERTY EXCLUDE_FROM_ALL On)
 
   # this marks the object as to be linked but not compiled
   foreach(IN_FULL_LLVMIR_FILE ${IN_FULL_LLVMIR_FILES})
     set_property(SOURCE ${IN_FULL_LLVMIR_FILE} PROPERTY EXTERNAL_OBJECT TRUE)
   endforeach()
-
-  add_dependencies(${IN_TRGT} ${OUT_TRGT})
 
   ## postamble
 endfunction()
@@ -671,13 +656,12 @@ function(attach_llvmir_library OUT_TRGT IN_TRGT)
 
   set_property(TARGET ${OUT_TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
   set_property(TARGET ${OUT_TRGT} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${OUT_DIR})
+  set_property(TARGET ${OUT_TRGT} PROPERTY EXCLUDE_FROM_ALL On)
 
   # this marks the object as to be linked but not compiled
   foreach(IN_FULL_LLVMIR_FILE ${IN_FULL_LLVMIR_FILES})
     set_property(SOURCE ${IN_FULL_LLVMIR_FILE} PROPERTY EXTERNAL_OBJECT TRUE)
   endforeach()
-
-  add_dependencies(${IN_TRGT} ${OUT_TRGT})
 
   ## postamble
 endfunction()
