@@ -255,7 +255,7 @@ function(ExtractLangFlags out_lang_flags lang)
 
   debug("@ExtractLangFlags ${lang}: ${lang_flags}")
 
-  set(${out_lang_flags} ${out_lang_flags_tmp} PARENT_SCOPE)
+  set(${out_lang_flags} ${lang_flags} PARENT_SCOPE)
 endfunction()
 
 
