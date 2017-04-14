@@ -3,6 +3,7 @@
 # options
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-inline")
 
 
 # general defs
