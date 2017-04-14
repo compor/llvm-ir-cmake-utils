@@ -16,7 +16,7 @@ string(CONCAT LLVM_IR_UTIL_VERSION
   ${LLVM_IR_UTIL_VERSION_PATCH})
 
 
-macro(LLVMIRSetup)
+macro(llvmir_setup)
   set(LLVMIR_DIR "llvm-ir")
 
   set(LLVMIR_COMPILER "")
@@ -49,6 +49,12 @@ macro(LLVMIRSetup)
     FULL_DOCS "list of LLVM IR files")
 endmacro()
 
+###
+
+llvmir_setup()
+
+###
+
 
 # internal utility macros/functions
 
@@ -72,7 +78,9 @@ macro(catuniq lst)
 endmacro()
 
 
-macro(SetLLVMIRCompiler linker_language)
+# internal implementation detail macros/functions
+
+macro(llvmir_set_compiler linker_language)
   if("${LLVMIR_COMPILER}" STREQUAL "")
     set(LLVMIR_COMPILER ${CMAKE_${linker_language}_COMPILER})
     set(LLVMIR_COMPILER_ID ${CMAKE_${linker_language}_COMPILER_ID})
@@ -87,7 +95,7 @@ macro(SetLLVMIRCompiler linker_language)
 endmacro()
 
 
-function(CheckTargetProperties trgt)
+function(llvmir_check_target_properties_impl trgt)
   if(NOT TARGET ${trgt})
     fatal("Cannot attach to non-existing target: ${trgt}.")
   endif()
@@ -114,21 +122,21 @@ function(CheckTargetProperties trgt)
 endfunction()
 
 
-function(CheckNonLLVMIRTargetProperties trgt)
+function(llvmir_check_non_llvmir_target_properties trgt)
   set(props SOURCES LINKER_LANGUAGE)
 
-  CheckTargetProperties(${trgt} ${props})
+  llvmir_check_target_properties_impl(${trgt} ${props})
 endfunction()
 
 
-function(CheckLLVMIRTargetProperties trgt)
+function(llvmir_check_target_properties trgt)
   set(props LINKER_LANGUAGE LLVMIR_DIR LLVMIR_FILES LLVMIR_TYPE)
 
-  CheckTargetProperties(${trgt} ${props})
+  llvmir_check_target_properties_impl(${trgt} ${props})
 endfunction()
 
 
-function(ExtractCompileDefsProperties out_compile_defs from)
+function(llvmir_extract_compile_defs_properties out_compile_defs from)
   set(defs "")
   set(compile_defs "")
   set(prop_name "COMPILE_DEFINITIONS")
@@ -175,13 +183,13 @@ function(ExtractCompileDefsProperties out_compile_defs from)
 
   list(REMOVE_DUPLICATES compile_defs)
 
-  debug("@ExtractCompileDefsProperties ${from}: ${compile_defs}")
+  debug("@llvmir_extract_compile_defs_properties ${from}: ${compile_defs}")
 
   set(${out_compile_defs} ${compile_defs} PARENT_SCOPE)
 endfunction()
 
 
-function(ExtractCompileOptionProperties out_compile_options trgt)
+function(llvmir_extract_compile_option_properties out_compile_options trgt)
   set(options "")
   set(compile_options "")
   set(prop_name "COMPILE_OPTIONS")
@@ -205,13 +213,13 @@ function(ExtractCompileOptionProperties out_compile_options trgt)
 
   list(REMOVE_DUPLICATES compile_options)
 
-  debug("@ExtractCompileOptionProperties ${trgt}: ${compile_options}")
+  debug("@llvmir_extract_compile_option_properties ${trgt}: ${compile_options}")
 
   set(${out_compile_options} ${compile_options} PARENT_SCOPE)
 endfunction()
 
 
-function(ExtractIncludeDirsProperties out_include_dirs trgt)
+function(llvmir_extract_include_dirs_properties out_include_dirs trgt)
   set(dirs "")
   set(prop_name "INCLUDE_DIRECTORIES")
 
@@ -239,13 +247,13 @@ function(ExtractIncludeDirsProperties out_include_dirs trgt)
 
   list(REMOVE_DUPLICATES include_dirs)
 
-  debug("@ExtractIncludeDirsProperties ${trgt}: ${include_dirs}")
+  debug("@llvmir_extract_include_dirs_properties ${trgt}: ${include_dirs}")
 
   set(${out_include_dirs} ${include_dirs} PARENT_SCOPE)
 endfunction()
 
 
-function(ExtractLangFlags out_lang_flags lang)
+function(llvmir_extract_lang_flags out_lang_flags lang)
   set(lang_flags "")
 
   list(APPEND lang_flags ${CMAKE_${lang}_FLAGS_${CMAKE_BUILD_TYPE}})
@@ -253,13 +261,13 @@ function(ExtractLangFlags out_lang_flags lang)
 
   list(REMOVE_DUPLICATES lang_flags)
 
-  debug("@ExtractLangFlags ${lang}: ${lang_flags}")
+  debug("@llvmir_extract_lang_flags ${lang}: ${lang_flags}")
 
   set(${out_lang_flags} ${lang_flags} PARENT_SCOPE)
 endfunction()
 
 
-function(ExtractCompileFlags out_compile_flags from)
+function(llvmir_extract_compile_flags out_compile_flags from)
   #message(DEPRECATION "COMPILE_FLAGS property is deprecated.")
 
   set(compile_flags "")
@@ -272,23 +280,20 @@ function(ExtractCompileFlags out_compile_flags from)
     get_property(compile_flags SOURCE ${from} PROPERTY ${prop_name})
   endif()
 
-  debug("@ExtractCompileFlags ${from}: ${compile_flags}")
+  debug("@llvmir_extract_compile_flags ${from}: ${compile_flags}")
 
   set(${out_compile_flags} ${compile_flags} PARENT_SCOPE)
 endfunction()
 
-#
 
-LLVMIRSetup()
-
-#
+# public (client) interface macros/functions
 
 function(attach_llvmir_bc_target OUT_TRGT IN_TRGT)
   ## preamble
   set(OUT_LLVMIR_FILES "")
   set(FULL_OUT_LLVMIR_FILES "")
 
-  CheckNonLLVMIRTargetProperties(${IN_TRGT})
+  llvmir_check_non_llvmir_target_properties(${IN_TRGT})
 
   # if the property does not exist the related variable is not defined
   get_property(IN_FILES TARGET ${IN_TRGT} PROPERTY SOURCES)
@@ -296,26 +301,26 @@ function(attach_llvmir_bc_target OUT_TRGT IN_TRGT)
 
   debug("@attach_llvmir_bc_target ${IN_TRGT} linker lang: ${LINKER_LANGUAGE}")
 
-  SetLLVMIRCompiler(${LINKER_LANGUAGE})
+  llvmir_set_compiler(${LINKER_LANGUAGE})
 
   ## command options
   set(WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${OUT_TRGT}")
   file(MAKE_DIRECTORY ${WORK_DIR})
 
   # compile definitions
-  ExtractCompileDefsProperties(IN_DEFS ${IN_TRGT})
+  llvmir_extract_compile_defs_properties(IN_DEFS ${IN_TRGT})
 
   # includes
-  ExtractIncludeDirsProperties(IN_INCLUDES ${IN_TRGT})
+  llvmir_extract_include_dirs_properties(IN_INCLUDES ${IN_TRGT})
 
   # compile options
-  ExtractCompileOptionProperties(IN_COMPILE_OPTIONS ${IN_TRGT})
+  llvmir_extract_compile_option_properties(IN_COMPILE_OPTIONS ${IN_TRGT})
 
   # compile flags
-  ExtractCompileFlags(IN_COMPILE_FLAGS ${IN_TRGT})
+  llvmir_extract_compile_flags(IN_COMPILE_FLAGS ${IN_TRGT})
 
   # compile lang flags
-  ExtractLangFlags(IN_LANG_FLAGS ${LINKER_LANGUAGE})
+  llvmir_extract_lang_flags(IN_LANG_FLAGS ${LINKER_LANGUAGE})
 
   ## main operations
   foreach(IN_FILE ${IN_FILES})
@@ -325,10 +330,10 @@ function(attach_llvmir_bc_target OUT_TRGT IN_TRGT)
     set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${OUT_LLVMIR_FILE}")
 
     # compile definitions per source file
-    ExtractCompileDefsProperties(IN_FILE_DEFS ${IN_FILE})
+    llvmir_extract_compile_defs_properties(IN_FILE_DEFS ${IN_FILE})
 
     # compile flags per source file
-    ExtractCompileFlags(IN_FILE_COMPILE_FLAGS ${IN_FILE})
+    llvmir_extract_lang_flags(IN_FILE_COMPILE_FLAGS ${IN_FILE})
 
     # stitch all args together
     catuniq(CURRENT_DEFS ${IN_DEFS} ${IN_FILE_DEFS})
@@ -372,7 +377,7 @@ endfunction()
 
 function(attach_llvmir_opt_pass_target OUT_TRGT IN_TRGT)
   ## preamble
-  CheckLLVMIRTargetProperties(${IN_TRGT})
+  llvmir_check_target_properties(${IN_TRGT})
 
   set(OUT_LLVMIR_FILES "")
   set(FULL_OUT_LLVMIR_FILES "")
@@ -430,7 +435,7 @@ endfunction()
 
 function(attach_llvmir_disassemble_target OUT_TRGT IN_TRGT)
   ## preamble
-  CheckLLVMIRTargetProperties(${IN_TRGT})
+  llvmir_check_target_properties(${IN_TRGT})
 
   set(OUT_LLVMIR_FILES "")
   set(FULL_OUT_LLVMIR_FILES "")
@@ -485,7 +490,7 @@ endfunction()
 
 function(attach_llvmir_assemble_target OUT_TRGT IN_TRGT)
   ## preamble
-  CheckLLVMIRTargetProperties(${IN_TRGT})
+  llvmir_check_target_properties(${IN_TRGT})
 
   set(OUT_LLVMIR_FILES "")
   set(FULL_OUT_LLVMIR_FILES "")
@@ -540,7 +545,7 @@ endfunction()
 
 function(attach_llvmir_link_target OUT_TRGT IN_TRGT)
   ## preamble
-  CheckLLVMIRTargetProperties(${IN_TRGT})
+  llvmir_check_target_properties(${IN_TRGT})
 
   set(OUT_LLVMIR_FILES "")
   set(FULL_OUT_LLVMIR_FILES "")
@@ -594,7 +599,7 @@ endfunction()
 
 function(attach_llvmir_executable OUT_TRGT IN_TRGT)
   ## preamble
-  CheckLLVMIRTargetProperties(${IN_TRGT})
+  llvmir_check_target_properties(${IN_TRGT})
 
   get_property(INFILES TARGET ${IN_TRGT} PROPERTY LLVMIR_FILES)
   get_property(IN_LLVMIR_DIR TARGET ${IN_TRGT} PROPERTY LLVMIR_DIR)
@@ -632,7 +637,7 @@ endfunction()
 
 function(attach_llvmir_library OUT_TRGT IN_TRGT)
   ## preamble
-  CheckLLVMIRTargetProperties(${IN_TRGT})
+  llvmir_check_target_properties(${IN_TRGT})
 
   get_property(INFILES TARGET ${IN_TRGT} PROPERTY LLVMIR_FILES)
   get_property(IN_LLVMIR_DIR TARGET ${IN_TRGT} PROPERTY LLVMIR_DIR)
