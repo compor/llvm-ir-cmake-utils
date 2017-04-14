@@ -256,10 +256,10 @@ endfunction()
 function(llvmir_extract_lang_flags out_lang_flags lang)
   set(lang_flags "")
 
-  list(APPEND lang_flags ${CMAKE_${lang}_FLAGS_${CMAKE_BUILD_TYPE}})
-  list(APPEND lang_flags ${CMAKE_${lang}_FLAGS})
+  set(lang_flags ${CMAKE_${lang}_FLAGS_${CMAKE_BUILD_TYPE}})
+  set(lang_flags "${lang_flags} ${CMAKE_${lang}_FLAGS}")
 
-  list(REMOVE_DUPLICATES lang_flags)
+  string(REPLACE "\ " ";" lang_flags ${lang_flags})
 
   debug("@llvmir_extract_lang_flags ${lang}: ${lang_flags}")
 
