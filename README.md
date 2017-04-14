@@ -25,42 +25,42 @@ A collection of helper `cmake` functions/macros that eases the generation of `LL
 ## Quick overview
 
 The provided `cmake` commands are expected to work in a parasitic way to targets created via `add_executable()` and
-`add_library`. The "gateway" command is `attach_llvmir_bc_target()` which generates the required bitcode files.
+`add_library`. The "gateway" command is `llvmir_attach_bc_target()` which generates the required bitcode files.
 Currently, `C/C++` are supported via `clang/clang++`, but in theory any compiler which produces `LLVM` bitcode should be
 easily supported (depending how nice it plays with `cmake` too).
 
 The `cmake` calls currently provided are:
 
-- `attach_llvmir_bc_target()`  
+- `llvmir_attach_bc_target()`  
   Attaches to an existing target that can be compiled down to `LLVM IR` and does just that, using all the related flags
   and options from the main target. The existing supported targets make use of `clang/clang++`, so currently this means
   that the `C/C++` language is supported. It uses `add_custom_library()` `cmake` command under the hood. This creates a
   target of type `LLVMIR`.
 
-- `attach_llvmir_opt_pass_target()`  
+- `llvmir_attach_opt_pass_target()`  
   Attaches to a target of type `LLVMIR` and applies various `opt` passes to its bitcode files, specified as arguments.
   It uses `add_custom_library()` `cmake` command under the hood. This creates a target of type `LLVMIR`.
 
-- `attach_llvmir_disassemble_target()`  
+- `llvmir_attach_disassemble_target()`  
   Attaches to a target of type `LLVMIR` and uses `llvm-dis` to disassemble its bitcode files. It uses
   `add_custom_library()` `cmake` command under the hood. This creates a target of type `LLVMIR`.
 
-- `attach_llvmir_assemble_target()`  
+- `llvmir_attach_assemble_target()`  
   Attaches to a target of type `LLVMIR` and uses `llvm-as` to assemble its bitcode files. It uses `add_custom_library()`
   `cmake` command under the hood. This creates a target of type
   `LLVMIR`.
 
-- `attach_llvmir_link_target()`  
+- `llvmir_attach_link_target()`  
   Attaches to a target of type `LLVMIR` and uses `llvm-link` to link its bitcode files to a single bitcode file. The
   output bitcode file is names after the target name. It uses `add_custom_library()` `cmake` command under the hood.
   This creates a target of type `LLVMIR`.
 
-- `attach_llvmir_library()`  
+- `llvmir_attach_library()`  
   Attaches to a target of type `LLVMIR` and uses the appropriate compiler to compile its bitcode files to a native
   library. The output library name uses the target name according to platform rules. It uses `add_library()` `cmake`
   command under the hood. This creates a target of type `LLVMIR`.
 
-- `attach_llvmir_executable()`  
+- `llvmir_attach_executable()`  
   Attaches to a target of type `LLVMIR` and uses the appropriate compiler to compile its bitcode files to a native
   executable. The output library name uses the target name according to platform rules. It uses `add_executable()`
   `cmake` command under the hood. This creates a target of type `LLVMIR`.
