@@ -28,7 +28,7 @@ llvmir_setup()
 
 # public (client) interface macros/functions
 
-function(attach_llvmir_bc_target OUT_TRGT IN_TRGT)
+function(llvmir_attach_bc_target OUT_TRGT IN_TRGT)
   ## preamble
   set(OUT_LLVMIR_FILES "")
   set(FULL_OUT_LLVMIR_FILES "")
@@ -39,7 +39,7 @@ function(attach_llvmir_bc_target OUT_TRGT IN_TRGT)
   get_property(IN_FILES TARGET ${IN_TRGT} PROPERTY SOURCES)
   get_property(LINKER_LANGUAGE TARGET ${IN_TRGT} PROPERTY LINKER_LANGUAGE)
 
-  debug("@attach_llvmir_bc_target ${IN_TRGT} linker lang: ${LINKER_LANGUAGE}")
+  debug("@llvmir_attach_bc_target ${IN_TRGT} linker lang: ${LINKER_LANGUAGE}")
 
   llvmir_set_compiler(${LINKER_LANGUAGE})
 
@@ -77,10 +77,10 @@ function(attach_llvmir_bc_target OUT_TRGT IN_TRGT)
 
     # stitch all args together
     catuniq(CURRENT_DEFS ${IN_DEFS} ${IN_FILE_DEFS})
-    debug("@attach_llvmir_bc_target ${IN_TRGT} defs: ${CURRENT_DEFS}")
+    debug("@llvmir_attach_bc_target ${IN_TRGT} defs: ${CURRENT_DEFS}")
 
     catuniq(CURRENT_COMPILE_FLAGS ${IN_COMPILE_FLAGS} ${IN_FILE_COMPILE_FLAGS})
-    debug("@attach_llvmir_bc_target ${IN_TRGT} compile flags: \
+    debug("@llvmir_attach_bc_target ${IN_TRGT} compile flags: \
       ${CURRENT_COMPILE_FLAGS}")
 
     set(CMD_ARGS "-emit-llvm" ${IN_LANG_FLAGS} ${IN_COMPILE_OPTIONS}
@@ -115,7 +115,7 @@ endfunction()
 
 #
 
-function(attach_llvmir_opt_pass_target OUT_TRGT IN_TRGT)
+function(llvmir_attach_opt_pass_target OUT_TRGT IN_TRGT)
   ## preamble
   llvmir_check_target_properties(${IN_TRGT})
 
@@ -173,7 +173,7 @@ endfunction()
 
 #
 
-function(attach_llvmir_disassemble_target OUT_TRGT IN_TRGT)
+function(llvmir_attach_disassemble_target OUT_TRGT IN_TRGT)
   ## preamble
   llvmir_check_target_properties(${IN_TRGT})
 
@@ -228,7 +228,7 @@ endfunction()
 
 #
 
-function(attach_llvmir_assemble_target OUT_TRGT IN_TRGT)
+function(llvmir_attach_assemble_target OUT_TRGT IN_TRGT)
   ## preamble
   llvmir_check_target_properties(${IN_TRGT})
 
@@ -283,7 +283,7 @@ endfunction()
 
 #
 
-function(attach_llvmir_link_target OUT_TRGT IN_TRGT)
+function(llvmir_attach_link_target OUT_TRGT IN_TRGT)
   ## preamble
   llvmir_check_target_properties(${IN_TRGT})
 
@@ -337,7 +337,7 @@ function(attach_llvmir_link_target OUT_TRGT IN_TRGT)
 endfunction()
 
 
-function(attach_llvmir_executable OUT_TRGT IN_TRGT)
+function(llvmir_attach_executable OUT_TRGT IN_TRGT)
   ## preamble
   llvmir_check_target_properties(${IN_TRGT})
 
@@ -375,7 +375,7 @@ endfunction()
 
 #
 
-function(attach_llvmir_library OUT_TRGT IN_TRGT)
+function(llvmir_attach_library OUT_TRGT IN_TRGT)
   ## preamble
   llvmir_check_target_properties(${IN_TRGT})
 

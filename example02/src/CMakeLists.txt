@@ -28,19 +28,19 @@ target_include_directories(bar PUBLIC
 
 # attachments on first target
 
-attach_llvmir_bc_target(bar_bc bar)
+llvmir_attach_bc_target(bar_bc bar)
 
-attach_llvmir_opt_pass_target(bar_pass1 bar_bc -mem2reg)
-attach_llvmir_opt_pass_target(bar_pass2 bar_pass1 -simplifycfg -licm)
-attach_llvmir_opt_pass_target(bar_pass3 bar_pass2 -licm)
+llvmir_attach_opt_pass_target(bar_pass1 bar_bc -mem2reg)
+llvmir_attach_opt_pass_target(bar_pass2 bar_pass1 -simplifycfg -licm)
+llvmir_attach_opt_pass_target(bar_pass3 bar_pass2 -licm)
 
-attach_llvmir_disassemble_target(bar_dis bar_pass2)
-attach_llvmir_assemble_target(bar_as bar_dis)
+llvmir_attach_disassemble_target(bar_dis bar_pass2)
+llvmir_attach_assemble_target(bar_as bar_dis)
 
-attach_llvmir_link_target(bar_llvmlink bar_pass2)
+llvmir_attach_link_target(bar_llvmlink bar_pass2)
 
-attach_llvmir_opt_pass_target(bar_pass4 bar_llvmlink -simplifycfg)
+llvmir_attach_opt_pass_target(bar_pass4 bar_llvmlink -simplifycfg)
 
-attach_llvmir_library(bar_bc_lib bar_pass2 SHARED)
+llvmir_attach_library(bar_bc_lib bar_pass2 SHARED)
 
 
