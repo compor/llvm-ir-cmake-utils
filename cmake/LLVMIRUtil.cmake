@@ -35,6 +35,9 @@ function(llvmir_attach_bc_target OUT_TRGT IN_TRGT)
 
   llvmir_check_non_llvmir_target_properties(${IN_TRGT})
 
+  # the 3.x and above INTERFACE_SOURCES does not participate in the compilation
+  # of a target
+
   # if the property does not exist the related variable is not defined
   get_property(IN_FILES TARGET ${IN_TRGT} PROPERTY SOURCES)
   get_property(LINKER_LANGUAGE TARGET ${IN_TRGT} PROPERTY LINKER_LANGUAGE)
