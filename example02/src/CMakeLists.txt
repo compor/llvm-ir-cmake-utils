@@ -25,6 +25,9 @@ set_target_properties(bar PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(bar PUBLIC 
   "${CMAKE_CURRENT_SOURCE_DIR}/../include")
 
+if(CMAKE_VERSION VERSION_EQUAL "3.1" OR CMAKE_VERSION VERSION_GREATER "3.1")
+  set_property(TARGET bar PROPERTY CXX_STANDARD 11)
+endif()
 
 # attachments on first target
 
