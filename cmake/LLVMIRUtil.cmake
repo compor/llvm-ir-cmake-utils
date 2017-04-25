@@ -56,6 +56,9 @@ function(llvmir_attach_bc_target OUT_TRGT IN_TRGT)
   # includes
   llvmir_extract_include_dirs_properties(IN_INCLUDES ${IN_TRGT})
 
+  # language standards flags
+  llvmir_extract_standard_flags(IN_STANDARD_FLAGS ${IN_TRGT})
+
   # compile options
   llvmir_extract_compile_option_properties(IN_COMPILE_OPTIONS ${IN_TRGT})
 
@@ -86,8 +89,9 @@ function(llvmir_attach_bc_target OUT_TRGT IN_TRGT)
     debug("@llvmir_attach_bc_target ${IN_TRGT} compile flags: \
       ${CURRENT_COMPILE_FLAGS}")
 
-    set(CMD_ARGS "-emit-llvm" ${IN_LANG_FLAGS} ${IN_COMPILE_OPTIONS}
-      ${CURRENT_COMPILE_FLAGS} ${CURRENT_DEFS} ${IN_INCLUDES})
+      set(CMD_ARGS "-emit-llvm" ${IN_STANDARD_FLAGS} ${IN_LANG_FLAGS}
+        ${IN_COMPILE_OPTIONS} ${CURRENT_COMPILE_FLAGS} ${CURRENT_DEFS}
+        ${IN_INCLUDES})
 
     add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
       COMMAND ${LLVMIR_COMPILER}

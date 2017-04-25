@@ -244,6 +244,49 @@ function(llvmir_extract_lang_flags out_lang_flags lang)
 endfunction()
 
 
+function(llvmir_extract_standard_flags out_standard_flags trgt)
+  set(standard_flags "")
+
+  get_property(std TARGET ${trgt} PROPERTY C_STANDARD)
+  get_property(req TARGET ${trgt} PROPERTY C_EXTENSIONS)
+
+  if(std)
+    if(req)
+      set(cflag "gnu")
+    else()
+      set(cflag "std")
+    endif()
+
+    set(cflag "${flag}c${std}")
+  endif()
+
+  get_property(std TARGET ${trgt} PROPERTY CXX_STANDARD)
+  get_property(req TARGET ${trgt} PROPERTY CXX_EXTENSIONS)
+
+  if(std)
+    if(req)
+      set(cxxflag "gnu")
+    else()
+      set(cxxflag "std")
+    endif()
+
+    set(cxxflag "${flag}c++${std}")
+  endif()
+
+  if(cflag)
+    set(standard_flags "-std=${cflag}")
+  endif()
+
+  if(cxxflag)
+    set(standard_flags "-std=${cxxflag}")
+  endif()
+
+  debug("@llvmir_extract_standard_flags ${lang}: ${standard_flags}")
+
+  set(${out_standard_flags} ${standard_flags} PARENT_SCOPE)
+endfunction()
+
+
 function(llvmir_extract_compile_flags out_compile_flags from)
   #message(DEPRECATION "COMPILE_FLAGS property is deprecated.")
 
