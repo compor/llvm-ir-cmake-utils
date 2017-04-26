@@ -57,7 +57,7 @@ function(llvmir_attach_bc_target OUT_TRGT IN_TRGT)
   llvmir_extract_include_dirs_properties(IN_INCLUDES ${IN_TRGT})
 
   # language standards flags
-  llvmir_extract_standard_flags(IN_STANDARD_FLAGS ${IN_TRGT})
+  llvmir_extract_standard_flags(IN_STANDARD_FLAGS ${IN_TRGT} ${LINKER_LANGUAGE})
 
   # compile options
   llvmir_extract_compile_option_properties(IN_COMPILE_OPTIONS ${IN_TRGT})

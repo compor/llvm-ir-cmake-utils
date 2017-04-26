@@ -244,41 +244,32 @@ function(llvmir_extract_lang_flags out_lang_flags lang)
 endfunction()
 
 
-function(llvmir_extract_standard_flags out_standard_flags trgt)
+function(llvmir_extract_standard_flags out_standard_flags trgt lang)
   set(standard_flags "")
+  set(std_prop "${lang}_STANDARD")
+  set(ext_prop "${lang}_EXTENSIONS")
 
-  get_property(std TARGET ${trgt} PROPERTY C_STANDARD)
-  get_property(req TARGET ${trgt} PROPERTY C_EXTENSIONS)
+  get_property(std TARGET ${trgt} PROPERTY ${std_prop})
+  get_property(ext TARGET ${trgt} PROPERTY ${ext_prop})
 
-  if(std)
-    if(req)
-      set(cflag "gnu")
-    else()
-      set(cflag "std")
-    endif()
-
-    set(cflag "${flag}c${std}")
-  endif()
-
-  get_property(std TARGET ${trgt} PROPERTY CXX_STANDARD)
-  get_property(req TARGET ${trgt} PROPERTY CXX_EXTENSIONS)
+  set(lang_prefix "")
 
   if(std)
-    if(req)
-      set(cxxflag "gnu")
+    if(ext)
+      set(lang_prefix "gnu")
     else()
-      set(cxxflag "std")
+      string(TOLOWER ${lang} lang_prefix)
     endif()
-
-    set(cxxflag "${flag}c++${std}")
   endif()
 
-  if(cflag)
-    set(standard_flags "-std=${cflag}")
+  if(lang_prefix STREQUAL "cxx")
+    set(lang_prefix "c++")
   endif()
 
-  if(cxxflag)
-    set(standard_flags "-std=${cxxflag}")
+  set(flag "${lang_prefix}${std}")
+
+  if(flag)
+    set(standard_flags "-std=${flag}")
   endif()
 
   debug("@llvmir_extract_standard_flags ${lang}: ${standard_flags}")
