@@ -222,7 +222,9 @@ function(llvmir_extract_include_dirs_properties out_include_dirs trgt)
     list(APPEND include_dirs -I${dir})
   endforeach()
 
+  if(include_dirs)
   list(REMOVE_DUPLICATES include_dirs)
+  endif()
 
   debug("@llvmir_extract_include_dirs_properties ${trgt}: ${include_dirs}")
 
