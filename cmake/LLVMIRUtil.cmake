@@ -13,7 +13,7 @@ include(LLVMIRUtilInternal)
 
 set(LLVM_IR_UTIL_VERSION_MAJOR "2")
 set(LLVM_IR_UTIL_VERSION_MINOR "4")
-set(LLVM_IR_UTIL_VERSION_PATCH "0")
+set(LLVM_IR_UTIL_VERSION_PATCH "1")
 
 string(CONCAT LLVM_IR_UTIL_VERSION
   ${LLVM_IR_UTIL_VERSION_MAJOR} "."
@@ -139,9 +139,6 @@ function(llvmir_attach_bc_target)
   endforeach()
 
   ## postamble
-  # clean up
-  set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
-    ${FULL_OUT_LLVMIR_FILES})
 
   # setup custom target
   add_custom_target(${TRGT} DEPENDS ${FULL_OUT_LLVMIR_FILES})
@@ -221,9 +218,6 @@ function(llvmir_attach_opt_pass_target)
   endforeach()
 
   ## postamble
-  # clean up
-  set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
-    ${FULL_OUT_LLVMIR_FILES})
 
   # setup custom target
   add_custom_target(${TRGT} DEPENDS ${FULL_OUT_LLVMIR_FILES})
@@ -300,10 +294,6 @@ function(llvmir_attach_disassemble_target)
 
   ## postamble
 
-  # clean up
-  set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
-    ${FULL_OUT_LLVMIR_FILES})
-
   # setup custom target
   add_custom_target(${TRGT} DEPENDS ${FULL_OUT_LLVMIR_FILES})
 
@@ -378,10 +368,6 @@ function(llvmir_attach_assemble_target)
   endforeach()
 
   ## postamble
-
-  # clean up
-  set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
-    ${FULL_OUT_LLVMIR_FILES})
 
   # setup custom target
   add_custom_target(${TRGT} DEPENDS ${FULL_OUT_LLVMIR_FILES})
@@ -467,9 +453,6 @@ function(llvmir_attach_link_target)
     VERBATIM)
 
   ## postamble
-  # clean up
-  set_property(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
-    ${FULL_OUT_LLVMIR_FILES})
 endfunction()
 
 
