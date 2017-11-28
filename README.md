@@ -6,19 +6,21 @@ A collection of helper `cmake` functions/macros that eases the generation of `LL
 
 ## Requirements
 
-- `cmake` 2.8.11 or newer
-- `LLVM` tools  
-  Currently used and supported:
-  - `clang/clang++`
-  - `opt`
-  - `llvm-dis` and `llvm-as`
-  - `llvm-link`
+- [`cmake`][1] 2.8.11 or later
+- [`LLVM`][2] tools:  
+  - Currently used:  
+    - `clang/clang++`
+    - `opt`
+    - `llvm-dis` / `llvm-as`
+    - `llvm-link`
+  - Tested with:  
+    - 3.7 and later
 
 
 ## Installation
 
 - Clone this repo (or even add it as a submodule to your project).
-- In your required `CMakeLists.txt` file `include()` the main `cmake` file.
+- In your `CMakeLists.txt` file `include()` `LLVMIRUtil.cmake`.
 - You are good to go!
 
 
@@ -70,18 +72,13 @@ The `cmake` calls currently provided are:
 
 Have a look and toy around with the included examples in this repo. The easiest way to start is:
 
-- `git clone [this repo]`
-- `mkdir build && cd build`
-- `CC=clang CXX=clang++ cmake [path to example dir]`
-- `make`
-- `make help` to see the available targets
+1. `git clone` this repo.
+2. Create a directory for an out-of-source build and `cd` into it.
+3. `CC=clang CXX=clang++ cmake [path to example source dir]`
+4. `cmake --build .`
+5. `cmake --build . --target help` to see available target and use them for bitcode generation.
 
 
-# Other
-
-## License
-
-GNU LGPL 2.1
-
-
+[1]: https://cmake.org
+[2]: www.llvm.org
 
