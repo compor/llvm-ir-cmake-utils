@@ -13,7 +13,7 @@ include(LLVMIRUtilInternal)
 
 set(LLVM_IR_UTIL_VERSION_MAJOR "2")
 set(LLVM_IR_UTIL_VERSION_MINOR "4")
-set(LLVM_IR_UTIL_VERSION_PATCH "3")
+set(LLVM_IR_UTIL_VERSION_PATCH "4")
 
 string(CONCAT LLVM_IR_UTIL_VERSION
   ${LLVM_IR_UTIL_VERSION_MAJOR} "."
@@ -75,7 +75,8 @@ function(llvmir_attach_bc_target)
   get_property(IN_FILES TARGET ${DEPENDS_TRGT} PROPERTY SOURCES)
   get_property(LINKER_LANGUAGE TARGET ${DEPENDS_TRGT} PROPERTY LINKER_LANGUAGE)
 
-  debug("@llvmir_attach_bc_target ${DEPENDS_TRGT} linker lang: ${LINKER_LANGUAGE}")
+  debug(
+    "@llvmir_attach_bc_target ${DEPENDS_TRGT} linker lang: ${LINKER_LANGUAGE}")
 
   llvmir_set_compiler(${LINKER_LANGUAGE})
 
@@ -90,7 +91,8 @@ function(llvmir_attach_bc_target)
   llvmir_extract_include_dirs_properties(IN_INCLUDES ${DEPENDS_TRGT})
 
   # language standards flags
-  llvmir_extract_standard_flags(IN_STANDARD_FLAGS ${DEPENDS_TRGT} ${LINKER_LANGUAGE})
+  llvmir_extract_standard_flags(IN_STANDARD_FLAGS
+    ${DEPENDS_TRGT} ${LINKER_LANGUAGE})
 
   # compile options
   llvmir_extract_compile_option_properties(IN_COMPILE_OPTIONS ${DEPENDS_TRGT})
@@ -120,11 +122,11 @@ function(llvmir_attach_bc_target)
 
     catuniq(CURRENT_COMPILE_FLAGS ${IN_COMPILE_FLAGS} ${IN_FILE_COMPILE_FLAGS})
     debug("@llvmir_attach_bc_target ${DEPENDS_TRGT} compile flags: \
-      ${CURRENT_COMPILE_FLAGS}")
+    ${CURRENT_COMPILE_FLAGS}")
 
-      set(CMD_ARGS "-emit-llvm" ${IN_STANDARD_FLAGS} ${IN_LANG_FLAGS}
-        ${IN_COMPILE_OPTIONS} ${CURRENT_COMPILE_FLAGS} ${CURRENT_DEFS}
-        ${IN_INCLUDES})
+    set(CMD_ARGS "-emit-llvm" ${IN_STANDARD_FLAGS} ${IN_LANG_FLAGS}
+      ${IN_COMPILE_OPTIONS} ${CURRENT_COMPILE_FLAGS} ${CURRENT_DEFS}
+      ${IN_INCLUDES})
 
     add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
       COMMAND ${LLVMIR_COMPILER}
@@ -208,7 +210,8 @@ function(llvmir_attach_opt_pass_target)
 
     add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
       COMMAND ${LLVMIR_OPT}
-      ARGS ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS} ${INFILE} -o ${FULL_OUT_LLVMIR_FILE}
+      ARGS
+      ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS} ${INFILE} -o ${FULL_OUT_LLVMIR_FILE}
       DEPENDS ${INFILE}
       COMMENT "Generating LLVM bitcode ${OUT_LLVMIR_FILE}"
       VERBATIM)
@@ -283,7 +286,8 @@ function(llvmir_attach_disassemble_target)
 
     add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
       COMMAND ${LLVMIR_DISASSEMBLER}
-      ARGS ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS} ${INFILE} -o ${FULL_OUT_LLVMIR_FILE}
+      ARGS
+      ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS} ${INFILE} -o ${FULL_OUT_LLVMIR_FILE}
       DEPENDS ${INFILE}
       COMMENT "Disassembling LLVM bitcode ${OUT_LLVMIR_FILE}"
       VERBATIM)
@@ -358,7 +362,8 @@ function(llvmir_attach_assemble_target)
 
     add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
       COMMAND ${LLVMIR_ASSEMBLER}
-      ARGS ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS} ${INFILE} -o ${FULL_OUT_LLVMIR_FILE}
+      ARGS
+      ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS} ${INFILE} -o ${FULL_OUT_LLVMIR_FILE}
       DEPENDS ${INFILE}
       COMMENT "Assembling LLVM bitcode ${OUT_LLVMIR_FILE}"
       VERBATIM)
@@ -447,7 +452,9 @@ function(llvmir_attach_link_target)
 
   add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
     COMMAND llvm-link
-    ARGS ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS} -o ${FULL_OUT_LLVMIR_FILE} ${IN_FULL_LLVMIR_FILES}
+    ARGS
+    ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS}
+    -o ${FULL_OUT_LLVMIR_FILE} ${IN_FULL_LLVMIR_FILES}
     DEPENDS ${IN_FULL_LLVMIR_FILES}
     COMMENT "Linking LLVM bitcode ${OUT_LLVMIR_FILE}"
     VERBATIM)
@@ -575,7 +582,8 @@ function(llvmir_attach_library)
     list(APPEND IN_FULL_LLVMIR_FILES "${IN_LLVMIR_DIR}/${IN_LLVMIR_FILE}")
   endforeach()
 
-  add_library(${TRGT} ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS} ${IN_FULL_LLVMIR_FILES})
+  add_library(${TRGT}
+    ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS} ${IN_FULL_LLVMIR_FILES})
 
   set_property(TARGET ${TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
   set_property(TARGET ${TRGT} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${OUT_DIR})
