@@ -223,7 +223,7 @@ function(llvmir_extract_include_dirs_properties out_include_dirs trgt)
   endforeach()
 
   if(include_dirs)
-  list(REMOVE_DUPLICATES include_dirs)
+    list(REMOVE_DUPLICATES include_dirs)
   endif()
 
   debug("@llvmir_extract_include_dirs_properties ${trgt}: ${include_dirs}")
@@ -281,16 +281,18 @@ endfunction()
 
 
 function(llvmir_extract_compile_flags out_compile_flags from)
-  message(WARNING "COMPILE_FLAGS property is deprecated.")
-
   set(compile_flags "")
   set(prop_name "COMPILE_FLAGS")
 
-  # deprecated according to cmake docs
   if(TARGET ${from})
     get_property(compile_flags TARGET ${from} PROPERTY ${prop_name})
   else()
     get_property(compile_flags SOURCE ${from} PROPERTY ${prop_name})
+  endif()
+
+  # deprecated according to cmake docs
+  if(NOT "${compile_flags}" STREQUAL "")
+    message(WARNING "COMPILE_FLAGS property is deprecated.")
   endif()
 
   debug("@llvmir_extract_compile_flags ${from}: ${compile_flags}")
