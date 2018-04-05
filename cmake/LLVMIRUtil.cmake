@@ -12,8 +12,8 @@ include(LLVMIRUtilInternal)
 
 
 set(LLVM_IR_UTIL_VERSION_MAJOR "2")
-set(LLVM_IR_UTIL_VERSION_MINOR "4")
-set(LLVM_IR_UTIL_VERSION_PATCH "7")
+set(LLVM_IR_UTIL_VERSION_MINOR "5")
+set(LLVM_IR_UTIL_VERSION_PATCH "0")
 
 string(CONCAT LLVM_IR_UTIL_VERSION
   ${LLVM_IR_UTIL_VERSION_MAJOR} "."
@@ -518,9 +518,8 @@ function(llvmir_attach_executable)
     list(APPEND IN_FULL_LLVMIR_FILES "${IN_LLVMIR_DIR}/${IN_LLVMIR_FILE}")
   endforeach()
 
-  add_executable(${TRGT}
-    ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS}
-    ${IN_FULL_LLVMIR_FILES})
+
+  add_executable(${TRGT} ${IN_FULL_LLVMIR_FILES})
 
   set_property(TARGET ${TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
   set_property(TARGET ${TRGT} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${OUT_DIR})
@@ -582,6 +581,7 @@ function(llvmir_attach_library)
     list(APPEND IN_FULL_LLVMIR_FILES "${IN_LLVMIR_DIR}/${IN_LLVMIR_FILE}")
   endforeach()
 
+  # currenly unparsed args holds the library mode, e.g. SHARED, STATIC, etc
   add_library(${TRGT}
     ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS} ${IN_FULL_LLVMIR_FILES})
 

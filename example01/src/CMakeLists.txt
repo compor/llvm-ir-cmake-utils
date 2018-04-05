@@ -17,7 +17,7 @@ set(SOURCES
 
 add_definitions(-DDIR_FOO=1)
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../include/general")
+include_directories("../include/general")
 
 
 # target level
@@ -39,10 +39,8 @@ target_compile_options(qux PUBLIC -Wnonnull)
 target_compile_options(qux PRIVATE -Wfloat-conversion)
 target_compile_options(qux INTERFACE -Wpedantic)
 
-target_include_directories(qux PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/../include/detail")
-target_include_directories(qux PUBLIC 
-  "${CMAKE_CURRENT_SOURCE_DIR}/../include")
+target_include_directories(qux PRIVATE "../include/detail")
+target_include_directories(qux PUBLIC "../include")
 
 
 # attachments on first target
@@ -81,11 +79,11 @@ llvmir_attach_library(qux_bc_lib qux_pass2 SHARED)
 add_dependencies(qux_bc_lib qux_pass2)
 
 
-add_custom_target(qux_pipeline1 DEPENDS 
+add_custom_target(qux_pipeline1 DEPENDS
   qux_pass1)
 
-add_custom_target(qux_pipeline2 DEPENDS 
+add_custom_target(qux_pipeline2 DEPENDS
   qux_pass2)
 
-set_property(TARGET qux_pipeline2 PROPERTY EXCLUDE_FROM_ALL Off)
+set_property(TARGET qux_pipeline2 PROPERTY EXCLUDE_FROM_ALL OFF)
 
