@@ -281,7 +281,7 @@ endfunction()
 
 
 function(llvmir_extract_compile_flags out_compile_flags from)
-  #message(DEPRECATION "COMPILE_FLAGS property is deprecated.")
+  message(WARNING "COMPILE_FLAGS property is deprecated.")
 
   set(compile_flags "")
   set(prop_name "COMPILE_FLAGS")
