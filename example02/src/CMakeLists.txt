@@ -22,11 +22,12 @@ add_library(bar ${SOURCES})
 # this property is required by our parasitic targets
 set_target_properties(bar PROPERTIES LINKER_LANGUAGE CXX)
 
-target_include_directories(bar PUBLIC 
-  "${CMAKE_CURRENT_SOURCE_DIR}/../include")
+target_include_directories(bar PUBLIC "../include")
 
 if(CMAKE_VERSION VERSION_EQUAL "3.1" OR CMAKE_VERSION VERSION_GREATER "3.1")
-  set_property(TARGET bar PROPERTY CXX_STANDARD 11)
+  set_target_properties(bar PROPERTIES
+    CXX_STANDARD 11
+    CXX_EXTENSIONS OFF)
 endif()
 
 # attachments on first target
