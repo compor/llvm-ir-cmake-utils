@@ -5,7 +5,7 @@ A collection of helper `cmake` functions/macros that eases the generation of `LL
 
 ## Requirements
 
--   [`cmake`][1] 2.8.11 or later
+-   [`cmake`][1] 3.0.0 or later
 -   [`LLVM`][2] tools:  
     -   Currently used:  
         -   `clang/clang++`
@@ -18,7 +18,7 @@ A collection of helper `cmake` functions/macros that eases the generation of `LL
 ## Installation
 
 -   Clone this repo (or even add it as a submodule to your project).
--   In your `CMakeLists.txt` file `include()` `LLVMIRUtil.cmake`.
+-   In your `CMakeLists.txt` file `include(LLVMIRUtil.cmake)`.
 -   You are good to go!
 
 ## Quick overview
@@ -63,7 +63,7 @@ The `cmake` calls currently provided are:
     executable. The output library name uses the target name according to platform rules. It uses `add_executable()`
     `cmake` command under the hood. This creates a target of type `LLVMIR`.
 
-## Quick How-To
+## Basic Usage
 
 Have a look and toy around with the included examples in this repo. The easiest way to start is:
 
