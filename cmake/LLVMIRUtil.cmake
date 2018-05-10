@@ -10,17 +10,6 @@ include(CMakeParseArguments)
 
 include(LLVMIRUtilInternal)
 
-
-set(LLVM_IR_UTIL_VERSION_MAJOR "2")
-set(LLVM_IR_UTIL_VERSION_MINOR "5")
-set(LLVM_IR_UTIL_VERSION_PATCH "1")
-
-string(CONCAT LLVM_IR_UTIL_VERSION
-  ${LLVM_IR_UTIL_VERSION_MAJOR} "."
-  ${LLVM_IR_UTIL_VERSION_MINOR} "."
-  ${LLVM_IR_UTIL_VERSION_PATCH})
-
-
 ###
 
 llvmir_setup()

@@ -40,7 +40,7 @@ macro(llvmir_setup)
 
   set(LLVMIR_COMPILER_IDS "Clang")
 
-  message(STATUS "LLVM IR Utils version: ${LLVM_IR_UTIL_VERSION}")
+  message(STATUS "LLVM IR Utils")
 
   define_property(TARGET PROPERTY LLVMIR_TYPE
     BRIEF_DOCS "type of LLVM IR file"
