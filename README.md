@@ -65,6 +65,23 @@ The `cmake` calls currently provided are:
     executable. The output library name uses the target name according to platform rules. It uses `add_executable()`
     `cmake` command under the hood. This creates a target of type `LLVMIR`.
 
+_CAUTION_
+
+If you require to get raw _unoptimized_ `LLVM` IR, but with the ability to further optimize it later on and you are
+compiling  with `LLVM` 5 or later, you need to add the following compile options, either:
+
+```bash
+-O1 -Xclang -disable-llvm-passes
+```
+
+or
+
+```bash
+-O0 -Xclang -disable-O0-optnone
+```
+
+This is because, since `LLVM` 5, using `-O0` add the `optnone` attribute to all functions.
+
 ## Basic Usage
 
 Have a look and toy around with the included examples in this repo. The easiest way to start is:
