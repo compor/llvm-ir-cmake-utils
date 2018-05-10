@@ -1,11 +1,6 @@
 
 # internal utility macros/functions
 
-function(fatal message_txt)
-  message(FATAL_ERROR "${message_txt}")
-endfunction()
-
-
 function(debug message_txt)
   if($ENV{LLVMIR_CMAKE_DEBUG})
     message(STATUS "[DEBUG] ${message_txt}")
@@ -65,7 +60,7 @@ macro(llvmir_set_compiler linker_language)
     list(FIND LLVMIR_COMPILER_IDS ${LLVMIR_COMPILER_ID} found)
 
     if(found EQUAL -1)
-      fatal("LLVM IR compiler ID ${LLVMIR_COMPILER_ID} is not in \
+      message(FATAL_ERROR "LLVM IR compiler ID ${LLVMIR_COMPILER_ID} is not in \
       ${LLVMIR_COMPILER_IDS}")
     endif()
   endif()
@@ -74,7 +69,7 @@ endmacro()
 
 function(llvmir_check_target_properties_impl trgt)
   if(NOT TARGET ${trgt})
-    fatal("Cannot attach to non-existing target: ${trgt}.")
+    message(FATAL_ERROR "Cannot attach to non-existing target: ${trgt}.")
   endif()
 
   foreach(prop ${ARGN})
@@ -89,11 +84,11 @@ function(llvmir_check_target_properties_impl trgt)
     get_property(is_set TARGET ${trgt} PROPERTY ${prop} SET)
 
     if(NOT is_def)
-      fatal("property ${prop} for target ${trgt} must be defined.")
+      message(FATAL_ERROR "property ${prop} for target ${trgt} must be defined.")
     endif()
 
     if(NOT is_set)
-      fatal("property ${prop} for target ${trgt} must be set.")
+      message(FATAL_ERROR "property ${prop} for target ${trgt} must be set.")
     endif()
   endforeach()
 endfunction()

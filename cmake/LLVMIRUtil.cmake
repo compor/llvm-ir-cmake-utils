@@ -46,20 +46,22 @@ function(llvmir_attach_bc_target)
     set(DEPENDS_TRGT ${ARGV1})
 
     if(${ARGC} GREATER 3)
-      fatal("llvmir_attach_bc_target: extraneous arguments provided")
+      message(FATAL_ERROR "llvmir_attach_bc_target: \
+      extraneous arguments provided")
     endif()
   else()
     if(LLVMIR_ATTACH_UNPARSED_ARGUMENTS)
-      fatal("llvmir_attach_bc_target: extraneous arguments provided")
+      message(FATAL_ERROR "llvmir_attach_bc_target: \
+      extraneous arguments provided")
     endif()
   endif()
 
   if(NOT TRGT)
-    fatal("llvmir_attach_bc_target: missing TARGET option")
+    message(FATAL_ERROR "llvmir_attach_bc_target: missing TARGET option")
   endif()
 
   if(NOT DEPENDS_TRGT)
-    fatal("llvmir_attach_bc_target: missing DEPENDS option")
+    message(FATAL_ERROR "llvmir_attach_bc_target: missing DEPENDS option")
   endif()
 
   ## preamble
@@ -172,11 +174,11 @@ function(llvmir_attach_opt_pass_target)
   endif()
 
   if(NOT TRGT)
-    fatal("llvmir_attach_bc_target: missing TARGET option")
+    message(FATAL_ERROR "llvmir_attach_bc_target: missing TARGET option")
   endif()
 
   if(NOT DEPENDS_TRGT)
-    fatal("llvmir_attach_bc_target: missing DEPENDS option")
+    message(FATAL_ERROR "llvmir_attach_bc_target: missing DEPENDS option")
   endif()
 
   ## preamble
@@ -191,11 +193,13 @@ function(llvmir_attach_opt_pass_target)
   get_property(IN_LLVMIR_TYPE TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_TYPE)
 
   if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
-    fatal("Cannot attach ${TRGT} to target of type: ${IN_LLVMIR_TYPE}.")
+    message(FATAL_ERROR "Cannot attach ${TRGT} to target of type: \
+    ${IN_LLVMIR_TYPE}.")
   endif()
 
   if("${LINKER_LANGUAGE}" STREQUAL "")
-    fatal("Linker language for target ${DEPENDS_TRGT} must be set.")
+    message(FATAL_ERROR "Linker language for target ${DEPENDS_TRGT} \
+    must be set.")
   endif()
 
   ## main operations
@@ -271,7 +275,7 @@ function(llvmir_attach_disassemble_target)
   get_property(IN_LLVMIR_TYPE TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_TYPE)
 
   if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
-    fatal("Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
+    message(FATAL_ERROR "Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
   endif()
 
   ## main operations
@@ -347,7 +351,7 @@ function(llvmir_attach_assemble_target)
   get_property(IN_LLVMIR_TYPE TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_TYPE)
 
   if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_TEXT_TYPE}")
-    fatal("Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
+    message(FATAL_ERROR "Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
   endif()
 
   ## main operations
@@ -423,7 +427,7 @@ function(llvmir_attach_link_target)
   get_property(IN_LLVMIR_TYPE TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_TYPE)
 
   if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
-    fatal("Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
+    message(FATAL_ERROR "Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
   endif()
 
   ## main operations
@@ -506,7 +510,7 @@ function(llvmir_attach_executable)
   get_property(IN_LLVMIR_TYPE TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_TYPE)
 
   if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
-    fatal("Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
+    message(FATAL_ERROR "Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
   endif()
 
   ## main operations
@@ -569,7 +573,7 @@ function(llvmir_attach_library)
   get_property(IN_LLVMIR_TYPE TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_TYPE)
 
   if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
-    fatal("Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
+    message(FATAL_ERROR "Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
   endif()
 
   ## main operations
