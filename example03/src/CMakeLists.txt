@@ -2,8 +2,6 @@
 
 # options
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
-
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath /lib")
 
 # general defs
@@ -24,11 +22,15 @@ set_target_properties(bar PROPERTIES LINKER_LANGUAGE CXX)
 
 target_include_directories(bar PUBLIC "../include")
 
-if(CMAKE_VERSION VERSION_EQUAL "3.1" OR CMAKE_VERSION VERSION_GREATER "3.1")
-  set_target_properties(bar PROPERTIES
-    CXX_STANDARD 11
-    CXX_EXTENSIONS OFF)
+target_compile_options(bar PUBLIC "-O0")
+
+if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "5.0.0")
+  target_compile_options(bar PUBLIC -Xclang -disable-O0-optnone)
 endif()
+
+set_target_properties(bar PROPERTIES
+  CXX_STANDARD 11
+  CXX_EXTENSIONS OFF)
 
 # attachments on first target
 

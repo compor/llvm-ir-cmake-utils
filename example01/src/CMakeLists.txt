@@ -1,11 +1,5 @@
 # cmake file
 
-# options
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-inline")
-
-
 # general defs
 
 set(SOURCES
@@ -34,6 +28,12 @@ target_compile_definitions(qux PRIVATE TARGET_PRIV_FOO=3)
 # this seems not to be used in add_executable/add_library
 #target_compile_definitions(qux INTERFACE TARGET_IF_FOO=4)
 target_compile_definitions(qux PUBLIC TARGET_IF_FOO=4)
+
+target_compile_options(qux PUBLIC -O0)
+
+if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "5.0.0")
+  target_compile_options(qux PUBLIC -Xclang -disable-O0-optnone)
+endif()
 
 target_compile_options(qux PUBLIC -Wnonnull)
 target_compile_options(qux PRIVATE -Wfloat-conversion)
