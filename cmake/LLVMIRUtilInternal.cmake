@@ -1,6 +1,8 @@
 
 # internal utility macros/functions
 
+include(CMakeParseArguments)
+
 function(debug message_txt)
   if($ENV{LLVMIR_CMAKE_DEBUG})
     message(STATUS "[DEBUG] ${message_txt}")
@@ -67,44 +69,90 @@ macro(llvmir_set_compiler linker_language)
 endmacro()
 
 
-function(llvmir_check_target_properties_impl trgt)
-  if(NOT TARGET ${trgt})
-    message(FATAL_ERROR "Cannot attach to non-existing target: ${trgt}.")
+function(llvmir_check_target_properties_impl)
+  set(options)
+  set(oneValueArgs TARGET RESULT_VARIABLE)
+  set(multiValueArgs PROPERTIES)
+  cmake_parse_arguments(CTP
+    "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  # argument checks
+
+  if(NOT CTP_TARGET)
+    message(FATAL_ERROR "Missing TARGET option.")
   endif()
 
-  foreach(prop ${ARGN})
+  if(NOT CTP_RESULT_VARIABLE)
+    message(FATAL_ERROR "Missing RESULT_VARIABLE option.")
+  endif()
+
+  if(NOT CTP_PROPERTIES)
+    message(FATAL_ERROR "Missing PROPERTIES option.")
+  endif()
+
+  if(CTP_UNPARSED_ARGUMENTS)
+    message(FATAL_ERROR "Extraneous arguments ${CTP_UNPARSED_ARGUMENTS}.")
+  endif()
+
+  if(NOT TARGET ${CTP_TARGET})
+    message(FATAL_ERROR "Cannot attach to non-existing target: ${CTP_TARGET}.")
+  endif()
+
+  set(_RESULT_VARIABLE 0)
+
+  foreach(prop ${CTP_PROPERTIES})
     # equivalent to
     # if(DEFINED prop AND prop STREQUAL "")
     set(is_def TRUE)
     set(is_set TRUE)
 
     # this seems to not be working for targets defined with builtins
-    #get_property(is_def TARGET ${trgt} PROPERTY ${prop} DEFINED)
+    #get_property(is_def TARGET ${CTP_TARGET} PROPERTY ${prop} DEFINED)
 
-    get_property(is_set TARGET ${trgt} PROPERTY ${prop} SET)
+    get_property(is_set TARGET ${CTP_TARGET} PROPERTY ${prop} SET)
 
     if(NOT is_def)
-      message(FATAL_ERROR "property ${prop} for target ${trgt} must be defined.")
+      message(WARNING "property ${prop} for target ${CTP_TARGET} \
+      must be defined.")
+      set(_RESULT_VARIABLE 1)
     endif()
 
     if(NOT is_set)
-      message(FATAL_ERROR "property ${prop} for target ${trgt} must be set.")
+      message(WARNING "property ${prop} for target ${CTP_TARGET} must be set.")
+      set(_RESULT_VARIABLE 2)
     endif()
   endforeach()
+
+  set(${CTP_RESULT_VARIABLE} ${_RESULT_VARIABLE} PARENT_SCOPE)
 endfunction()
 
 
 function(llvmir_check_non_llvmir_target_properties trgt)
   set(props SOURCES LINKER_LANGUAGE)
 
-  llvmir_check_target_properties_impl(${trgt} ${props})
+  llvmir_check_target_properties_impl(
+    TARGET ${trgt}
+    PROPERTIES ${props}
+    RESULT_VARIABLE RC)
+
+  if(RC)
+    message(FATAL_ERROR "Target ${trgt} is missing required properties.")
+  endif()
 endfunction()
 
 
 function(llvmir_check_target_properties trgt)
   set(props LINKER_LANGUAGE LLVMIR_DIR LLVMIR_FILES LLVMIR_TYPE)
 
-  llvmir_check_target_properties_impl(${trgt} ${props})
+  llvmir_check_target_properties_impl(
+    TARGET ${trgt}
+    PROPERTIES ${props}
+    RESULT_VARIABLE RC)
+
+  if(RC)
+    message(FATAL_ERROR "Target ${trgt} is missing required properties.\
+    It might not be a LLVMIR target.")
+  endif()
 endfunction()
 
 
