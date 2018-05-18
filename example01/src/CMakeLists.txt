@@ -31,7 +31,8 @@ target_compile_definitions(qux PUBLIC TARGET_IF_FOO=4)
 
 target_compile_options(qux PUBLIC -O0)
 
-if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "5.0.0")
+if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "5.0.0" OR
+    CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "5.0.0")
   target_compile_options(qux PUBLIC -Xclang -disable-O0-optnone)
 endif()
 

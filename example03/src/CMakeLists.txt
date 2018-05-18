@@ -24,7 +24,8 @@ target_include_directories(bar PUBLIC "../include")
 
 target_compile_options(bar PUBLIC "-O0")
 
-if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "5.0.0")
+if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "5.0.0" OR
+    CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "5.0.0")
   target_compile_options(bar PUBLIC -Xclang -disable-O0-optnone)
 endif()
 
