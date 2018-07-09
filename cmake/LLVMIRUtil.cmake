@@ -608,6 +608,113 @@ function(llvmir_attach_link_target)
   ## postamble
 endfunction()
 
+function(llvmir_attach_obj_target)
+  set(options)
+  set(oneValueArgs TARGET DEPENDS)
+  set(multiValueArgs)
+  cmake_parse_arguments(LLVMIR_ATTACH
+    "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+  set(TRGT ${LLVMIR_ATTACH_TARGET})
+  set(DEPENDS_TRGT ${LLVMIR_ATTACH_DEPENDS})
+
+  # fallback to backwards compatible mode for argument parsing
+  if(NOT TRGT AND NOT DEPENDS_TRGT)
+    list(GET LLVMIR_ATTACH_UNPARSED_ARGUMENTS 0 TRGT)
+    list(GET LLVMIR_ATTACH_UNPARSED_ARGUMENTS 1 DEPENDS_TRGT)
+    list(REMOVE_AT LLVMIR_ATTACH_UNPARSED_ARGUMENTS 0 1)
+  endif()
+
+  if(NOT TRGT)
+    message(FATAL_ERROR "llvmir_attach_obj_target: missing TARGET option")
+  endif()
+
+  if(NOT DEPENDS_TRGT)
+    message(FATAL_ERROR "llvmir_attach_obj_target: missing DEPENDS option")
+  endif()
+
+  ## preamble
+  llvmir_check_target_properties(${DEPENDS_TRGT})
+
+  set(OUT_LLVMIR_FILES "")
+  set(FULL_OUT_LLVMIR_FILES "")
+
+  get_property(IN_LLVMIR_TYPE TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_TYPE)
+  get_property(LLVMIR_EXTERNAL_TYPE TARGET ${DEPENDS_TRGT}
+    PROPERTY LLVMIR_EXTERNAL_TYPE)
+  get_property(INFILES TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_FILES)
+  get_property(IN_LLVMIR_DIR TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_DIR)
+  get_property(LINKER_LANGUAGE TARGET ${DEPENDS_TRGT} PROPERTY LINKER_LANGUAGE)
+  get_property(LINK_DEPENDS TARGET ${DEPENDS_TRGT} PROPERTY LINK_DEPENDS)
+  get_property(LINK_FLAGS TARGET ${DEPENDS_TRGT} PROPERTY LINK_FLAGS)
+  get_property(LINK_FLAGS_${CMAKE_BUILD_TYPE}
+    TARGET ${DEPENDS_TRGT}
+    PROPERTY LINK_FLAGS_${CMAKE_BUILD_TYPE})
+  get_property(INTERFACE_LINK_LIBRARIES
+    TARGET ${DEPENDS_TRGT}
+    PROPERTY INTERFACE_LINK_LIBRARIES)
+  get_property(LINK_LIBRARIES TARGET ${DEPENDS_TRGT} PROPERTY LINK_LIBRARIES)
+  get_property(LINK_INTERFACE_LIBRARIES
+    TARGET ${DEPENDS_TRGT}
+    PROPERTY LINK_INTERFACE_LIBRARIES)
+  get_property(LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
+    TARGET ${DEPENDS_TRGT}
+    PROPERTY LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE})
+
+  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
+    message(FATAL_ERROR "Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
+  endif()
+
+  ## main operations
+  set(WORK_DIR "${CMAKE_CURRENT_BINARY_DIR}/${LLVMIR_DIR}/${TRGT}")
+  file(MAKE_DIRECTORY ${WORK_DIR})
+
+  set(IN_FULL_LLVMIR_FILES "")
+  foreach(IN_LLVMIR_FILE ${INFILES})
+    list(APPEND IN_FULL_LLVMIR_FILES "${IN_LLVMIR_DIR}/${IN_LLVMIR_FILE}")
+  endforeach()
+
+  set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${TRGT}.o")
+  get_filename_component(OUT_LLVMIR_FILE ${FULL_OUT_LLVMIR_FILE} NAME)
+
+  list(APPEND OUT_LLVMIR_FILES ${OUT_LLVMIR_FILE})
+  list(APPEND FULL_OUT_LLVMIR_FILES ${FULL_OUT_LLVMIR_FILE})
+
+  # setup custom target
+  add_custom_target(${TRGT} DEPENDS ${FULL_OUT_LLVMIR_FILES})
+
+  set_property(TARGET ${TRGT} PROPERTY LLVMIR_TYPE ${LLVMIR_OBJECT_TYPE})
+  set_property(TARGET ${TRGT}
+    PROPERTY LLVMIR_EXTERNAL_TYPE ${LLVMIR_EXTERNAL_TYPE})
+  set_property(TARGET ${TRGT} PROPERTY LLVMIR_DIR ${WORK_DIR})
+  set_property(TARGET ${TRGT} PROPERTY LLVMIR_FILES ${OUT_LLVMIR_FILES})
+  set_property(TARGET ${TRGT} PROPERTY LINKER_LANGUAGE ${LINKER_LANGUAGE})
+  set_property(TARGET ${TRGT} PROPERTY LINK_DEPENDS ${LINK_DEPENDS})
+  set_property(TARGET ${TRGT} PROPERTY LINK_FLAGS ${LINK_FLAGS})
+  set_property(TARGET ${TRGT}
+    PROPERTY LINK_FLAGS_${CMAKE_BUILD_TYPE} ${LINK_FLAGS_${CMAKE_BUILD_TYPE}})
+  set_property(TARGET ${TRGT}
+    PROPERTY INTERFACE_LINK_LIBRARIES ${INTERFACE_LINK_LIBRARIES})
+  set_property(TARGET ${TRGT}
+    PROPERTY LINK_INTERFACE_LIBRARIES ${LINK_INTERFACE_LIBRARIES})
+  set_property(TARGET ${TRGT}
+    PROPERTY
+    LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
+    ${LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}})
+  set_property(TARGET ${TRGT} PROPERTY EXCLUDE_FROM_ALL On)
+
+  add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
+    COMMAND llc
+    ARGS
+    -filetype=obj
+    ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS}
+    -o ${FULL_OUT_LLVMIR_FILE} ${IN_FULL_LLVMIR_FILES}
+    DEPENDS ${IN_FULL_LLVMIR_FILES}
+    COMMENT "Generating object ${OUT_LLVMIR_FILE}"
+    VERBATIM)
+
+  ## postamble
+endfunction()
 
 function(llvmir_attach_executable)
   set(options)
@@ -668,7 +775,8 @@ function(llvmir_attach_executable)
     TARGET ${DEPENDS_TRGT}
     PROPERTY LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE})
 
-  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
+  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}" AND
+      NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_OBJECT_TYPE}")
     message(FATAL_ERROR "Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
   endif()
 
@@ -777,7 +885,8 @@ function(llvmir_attach_library)
     TARGET ${DEPENDS_TRGT}
     PROPERTY LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE})
 
-  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
+  if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}" AND
+      NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_OBJECT_TYPE}")
     message(FATAL_ERROR "Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
   endif()
 
