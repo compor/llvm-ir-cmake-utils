@@ -81,6 +81,7 @@ function(llvmir_attach_bc_target)
   get_property(LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     TARGET ${DEPENDS_TRGT}
     PROPERTY LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE})
+  get_property(SHORT_NAME TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_SHORT_NAME)
 
   debug(
     "@llvmir_attach_bc_target ${DEPENDS_TRGT} linker lang: ${LINKER_LANGUAGE}")
@@ -170,6 +171,7 @@ function(llvmir_attach_bc_target)
     LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     ${LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}})
   set_property(TARGET ${TRGT} PROPERTY EXCLUDE_FROM_ALL On)
+  set_property(TARGET ${TRGT} PROPERTY LLVMIR_SHORT_NAME ${SHORT_NAME})
 endfunction()
 
 #
@@ -226,6 +228,7 @@ function(llvmir_attach_opt_pass_target)
   get_property(LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     TARGET ${DEPENDS_TRGT}
     PROPERTY LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE})
+  get_property(SHORT_NAME TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_SHORT_NAME)
 
   if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
     message(FATAL_ERROR "Cannot attach ${TRGT} to target of type: \
@@ -283,6 +286,7 @@ function(llvmir_attach_opt_pass_target)
     LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     ${LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}})
   set_property(TARGET ${TRGT} PROPERTY EXCLUDE_FROM_ALL On)
+  set_property(TARGET ${TRGT} PROPERTY LLVMIR_SHORT_NAME ${SHORT_NAME})
 endfunction()
 
 #
@@ -339,6 +343,7 @@ function(llvmir_attach_disassemble_target)
   get_property(LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     TARGET ${DEPENDS_TRGT}
     PROPERTY LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE})
+  get_property(SHORT_NAME TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_SHORT_NAME)
 
   if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
     message(FATAL_ERROR "Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
@@ -390,6 +395,7 @@ function(llvmir_attach_disassemble_target)
     LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     ${LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}})
   set_property(TARGET ${TRGT} PROPERTY EXCLUDE_FROM_ALL On)
+  set_property(TARGET ${TRGT} PROPERTY LLVMIR_SHORT_NAME ${SHORT_NAME})
 endfunction()
 
 #
@@ -446,6 +452,7 @@ function(llvmir_attach_assemble_target)
   get_property(LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     TARGET ${DEPENDS_TRGT}
     PROPERTY LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE})
+  get_property(SHORT_NAME TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_SHORT_NAME)
 
   if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_TEXT_TYPE}")
     message(FATAL_ERROR "Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
@@ -497,6 +504,7 @@ function(llvmir_attach_assemble_target)
     LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     ${LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}})
   set_property(TARGET ${TRGT} PROPERTY EXCLUDE_FROM_ALL On)
+  set_property(TARGET ${TRGT} PROPERTY LLVMIR_SHORT_NAME ${SHORT_NAME})
 endfunction()
 
 #
@@ -553,6 +561,7 @@ function(llvmir_attach_link_target)
   get_property(LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     TARGET ${DEPENDS_TRGT}
     PROPERTY LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE})
+  get_property(SHORT_NAME TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_SHORT_NAME)
 
   if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
     message(FATAL_ERROR "Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
@@ -568,6 +577,10 @@ function(llvmir_attach_link_target)
   endforeach()
 
   set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${TRGT}.${LLVMIR_BINARY_FMT_SUFFIX}")
+  if(SHORT_NAME)
+    set(FULL_OUT_LLVMIR_FILE
+      "${WORK_DIR}/${SHORT_NAME}.${LLVMIR_BINARY_FMT_SUFFIX}")
+  endif()
   get_filename_component(OUT_LLVMIR_FILE ${FULL_OUT_LLVMIR_FILE} NAME)
 
   list(APPEND OUT_LLVMIR_FILES ${OUT_LLVMIR_FILE})
@@ -595,6 +608,7 @@ function(llvmir_attach_link_target)
     LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     ${LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}})
   set_property(TARGET ${TRGT} PROPERTY EXCLUDE_FROM_ALL On)
+  set_property(TARGET ${TRGT} PROPERTY LLVMIR_SHORT_NAME ${SHORT_NAME})
 
   add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
     COMMAND llvm-link
@@ -660,6 +674,7 @@ function(llvmir_attach_obj_target)
   get_property(LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     TARGET ${DEPENDS_TRGT}
     PROPERTY LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE})
+  get_property(SHORT_NAME TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_SHORT_NAME)
 
   if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}")
     message(FATAL_ERROR "Cannot attach ${TRGT} to a ${IN_LLVMIR_TYPE} target.")
@@ -675,6 +690,9 @@ function(llvmir_attach_obj_target)
   endforeach()
 
   set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${TRGT}.o")
+  if(SHORT_NAME)
+    set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${SHORT_NAME}.o")
+  endif()
   get_filename_component(OUT_LLVMIR_FILE ${FULL_OUT_LLVMIR_FILE} NAME)
 
   list(APPEND OUT_LLVMIR_FILES ${OUT_LLVMIR_FILE})
@@ -702,6 +720,7 @@ function(llvmir_attach_obj_target)
     LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     ${LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}})
   set_property(TARGET ${TRGT} PROPERTY EXCLUDE_FROM_ALL On)
+  set_property(TARGET ${TRGT} PROPERTY LLVMIR_SHORT_NAME ${SHORT_NAME})
 
   add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
     COMMAND llc
@@ -774,6 +793,7 @@ function(llvmir_attach_executable)
   get_property(LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     TARGET ${DEPENDS_TRGT}
     PROPERTY LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE})
+  get_property(SHORT_NAME TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_SHORT_NAME)
 
   if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}" AND
       NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_OBJECT_TYPE}")
@@ -791,6 +811,10 @@ function(llvmir_attach_executable)
 
 
   add_executable(${TRGT} ${IN_FULL_LLVMIR_FILES})
+
+  if(SHORT_NAME)
+    set_property(TARGET ${TRGT} PROPERTY OUTPUT_NAME ${SHORT_NAME})
+  endif()
 
   # simply setting the property does not seem to work
   #set_property(TARGET ${TRGT}
@@ -824,6 +848,7 @@ function(llvmir_attach_executable)
   set_property(TARGET ${TRGT}
     PROPERTY LINK_FLAGS_${CMAKE_BUILD_TYPE} ${LINK_FLAGS_${CMAKE_BUILD_TYPE}})
   set_property(TARGET ${TRGT} PROPERTY EXCLUDE_FROM_ALL On)
+  set_property(TARGET ${TRGT} PROPERTY LLVMIR_SHORT_NAME ${SHORT_NAME})
 
   # this marks the object as to be linked but not compiled
   foreach(IN_FULL_LLVMIR_FILE ${IN_FULL_LLVMIR_FILES})
@@ -884,6 +909,7 @@ function(llvmir_attach_library)
   get_property(LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}
     TARGET ${DEPENDS_TRGT}
     PROPERTY LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE})
+  get_property(SHORT_NAME TARGET ${DEPENDS_TRGT} PROPERTY LLVMIR_SHORT_NAME)
 
   if(NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_BINARY_TYPE}" AND
       NOT "${IN_LLVMIR_TYPE}" STREQUAL "${LLVMIR_OBJECT_TYPE}")
@@ -902,6 +928,10 @@ function(llvmir_attach_library)
   # currenly unparsed args holds the library mode, e.g. SHARED, STATIC, etc
   add_library(${TRGT}
     ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS} ${IN_FULL_LLVMIR_FILES})
+
+  if(SHORT_NAME)
+    set_property(TARGET ${TRGT} PROPERTY OUTPUT_NAME ${SHORT_NAME})
+  endif()
 
   # simply setting the property does not seem to work
   #set_property(TARGET ${TRGT}
@@ -935,6 +965,7 @@ function(llvmir_attach_library)
   set_property(TARGET ${TRGT}
     PROPERTY LINK_FLAGS_${CMAKE_BUILD_TYPE} ${LINK_FLAGS_${CMAKE_BUILD_TYPE}})
   set_property(TARGET ${TRGT} PROPERTY EXCLUDE_FROM_ALL On)
+  set_property(TARGET ${TRGT} PROPERTY LLVMIR_SHORT_NAME ${SHORT_NAME})
 
   # this marks the object as to be linked but not compiled
   foreach(IN_FULL_LLVMIR_FILE ${IN_FULL_LLVMIR_FILES})
