@@ -20,7 +20,7 @@ A collection of helper `cmake` functions/macros that eases the generation of `LL
 ## Installation
 
 -   Clone this repo (or even add it as a submodule to your project).
--   In your `CMakeLists.txt` file `include(LLVMIRUtil.cmake)`.
+-   In your `CMakeLists.txt` file `include(LLVMIRUtil)`.
 -   You are good to go!
 
 ## Quick overview
