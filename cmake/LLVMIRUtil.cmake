@@ -111,9 +111,44 @@ function(llvmir_attach_bc_target)
   # compile lang flags
   llvmir_extract_lang_flags(IN_LANG_FLAGS ${LINKER_LANGUAGE})
 
-  ## main operations
+  set(header_exts ".h;.hh;.hpp;.h++;.hxx")
+  set(temp_include_dirs "")
+
+  # Find all header files in the source
   foreach(IN_FILE ${IN_FILES})
-    get_filename_component(OUTFILE ${IN_FILE} NAME_WE)
+    get_filename_component(FILE_EXT ${IN_FILE} LAST_EXT)
+    get_filename_component(FILE_DIR ${IN_FILE} DIRECTORY)
+    string(TOLOWER ${FILE_EXT} FILE_EXT)
+    list(FIND header_exts ${FILE_EXT} _index)
+
+    if(${_index} GREATER -1)
+      message(WARNING "A header file ${IN_FILE} is found in source files! Please add header directories using target_include_directories() instead.")
+
+      # Add to include list
+      list(APPEND temp_include_dirs "-I${FILE_DIR}")
+    endif()
+  endforeach()
+
+  if(temp_include_dirs)
+    list(REMOVE_DUPLICATES temp_include_dirs)
+    message(WARNING "\"${temp_include_dirs}\" added to include directories.")
+
+    list(APPEND IN_INCLUDES ${temp_include_dirs})
+    list(REMOVE_DUPLICATES IN_INCLUDES)
+  endif()
+
+  # main operations
+  foreach(IN_FILE ${IN_FILES})
+    # Skip header files
+    get_filename_component(FILE_EXT ${IN_FILE} LAST_EXT)
+    string(TOLOWER ${FILE_EXT} FILE_EXT)
+
+    list (FIND header_exts ${FILE_EXT} _index)
+    if(${_index} GREATER -1)
+      continue()
+    endif()
+
+    get_filename_component(OUTFILE ${IN_FILE} NAME)
     get_filename_component(INFILE ${IN_FILE} ABSOLUTE)
     set(OUT_LLVMIR_FILE "${OUTFILE}.${LLVMIR_BINARY_FMT_SUFFIX}")
     set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${OUT_LLVMIR_FILE}")
