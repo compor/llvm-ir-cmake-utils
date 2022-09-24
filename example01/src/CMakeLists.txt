@@ -4,7 +4,7 @@
 
 set(SOURCES
   foo.cpp
-  bar.cpp)
+  )
 
 
 # directory level
@@ -18,6 +18,11 @@ include_directories("../include/general")
 
 add_executable(qux ${SOURCES})
 #add_library(qux ${SOURCES})
+
+add_library(bar STATIC bar.cpp)
+target_include_directories(bar PRIVATE "../include/detail")
+target_include_directories(bar PUBLIC "../include")
+target_link_libraries(qux bar)
 
 # this property is required by our parasitic targets
 set_target_properties(qux PROPERTIES LINKER_LANGUAGE CXX)
@@ -46,7 +51,7 @@ target_include_directories(qux PUBLIC "../include")
 
 # attachments on first target
 
-llvmir_attach_bc_target(qux_bc qux)
+llvmir_attach_bc_target(qux_bc qux LINK_STATIC_LIB)
 add_dependencies(qux_bc qux)
 
 llvmir_attach_opt_pass_target(qux_pass1 qux_bc -mem2reg)
@@ -66,6 +71,9 @@ add_dependencies(qux_as qux_dis)
 
 llvmir_attach_link_target(qux_llvmlink qux_pass2)
 add_dependencies(qux_llvmlink qux_pass2)
+
+llvmir_attach_disassemble_target(qux_llvmlink_dis qux_llvmlink)
+add_dependencies(qux_llvmlink_dis qux_llvmlink)
 
 llvmir_attach_opt_pass_target(qux_pass4 qux_llvmlink -simplifycfg)
 add_dependencies(qux_pass4 qux_llvmlink)
@@ -88,3 +96,4 @@ add_custom_target(qux_pipeline2 DEPENDS
 
 set_property(TARGET qux_pipeline2 PROPERTY EXCLUDE_FROM_ALL OFF)
 
+set_property(TARGET qux_llvmlink_dis PROPERTY EXCLUDE_FROM_ALL OFF)
