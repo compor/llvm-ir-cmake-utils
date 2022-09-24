@@ -20,7 +20,7 @@ llvmir_setup()
 # public (client) interface macros/functions
 
 function(llvmir_attach_bc_target)
-  set(options)
+  set(options LINK_STATIC_LIB)
   set(oneValueArgs TARGET DEPENDS)
   set(multiValueArgs)
   cmake_parse_arguments(LLVMIR_ATTACH
@@ -110,6 +110,33 @@ function(llvmir_attach_bc_target)
 
   # compile lang flags
   llvmir_extract_lang_flags(IN_LANG_FLAGS ${LINKER_LANGUAGE})
+
+  # Link static libraries
+  if(LLVMIR_ATTACH_LINK_STATIC_LIB)
+    message(STATUS "LINK_STATIC_LIB option is turned on. Linking static libraries.")
+
+    # Find statically linked libraries, and add the source files for IR generation
+    foreach(LINK_LIB ${LINK_LIBRARIES})
+      if(TARGET ${LINK_LIB})
+        get_target_property(type ${LINK_LIB} TYPE)
+
+        # Check the library is a static one. For shared libraries, we cannot get the source files for compiling.
+        if(${type} STREQUAL "STATIC_LIBRARY")
+          get_property(LINK_LIB_FILES TARGET ${LINK_LIB} PROPERTY SOURCES)
+          message(STATUS "Linking Static library: ${LINK_LIB}")
+
+          foreach(LINK_LIB_FILE ${LINK_LIB_FILES})
+            if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${LINK_LIB_FILE}")
+              list(APPEND IN_FILES ${LINK_LIB_FILE})
+              message(STATUS "Add file from static library: ${LINK_LIB_FILE}")
+            endif()
+          endforeach()
+        endif()
+      endif()
+    endforeach()
+
+    list(REMOVE_DUPLICATES IN_FILES)
+  endif()
 
   set(header_exts ".h;.hh;.hpp;.h++;.hxx")
   set(temp_include_dirs "")
@@ -1007,6 +1034,6 @@ function(llvmir_attach_library)
     set_property(SOURCE ${IN_FULL_LLVMIR_FILE} PROPERTY EXTERNAL_OBJECT TRUE)
   endforeach()
 
-  ## postamble
+# # postamble
 endfunction()
 
