@@ -20,7 +20,7 @@ llvmir_setup()
 # public (client) interface macros/functions
 
 function(llvmir_attach_bc_target)
-  set(options LINK_STATIC_LIB)
+  set(options ATTACH_TO_DEPENDENT_STATIC_LIBS)
   set(oneValueArgs TARGET DEPENDS)
   set(multiValueArgs)
   cmake_parse_arguments(LLVMIR_ATTACH
@@ -112,8 +112,8 @@ function(llvmir_attach_bc_target)
   llvmir_extract_lang_flags(IN_LANG_FLAGS ${LINKER_LANGUAGE})
 
   # Link static libraries
-  if(LLVMIR_ATTACH_LINK_STATIC_LIB)
-    message(STATUS "LINK_STATIC_LIB option is turned on. Linking static libraries.")
+  if(LLVMIR_ATTACH_ATTACH_TO_DEPENDENT_STATIC_LIBS)
+    message(STATUS "ATTACH_TO_DEPENDENT_STATIC_LIBS option is turned on. Attaching to dependent static libraries of target ${TRGT}.")
 
     # Find statically linked libraries, and add the source files for IR generation
     foreach(LINK_LIB ${LINK_LIBRARIES})
@@ -123,7 +123,7 @@ function(llvmir_attach_bc_target)
         # Check the library is a static one. For shared libraries, we cannot get the source files for compiling.
         if(${type} STREQUAL "STATIC_LIBRARY")
           get_property(LINK_LIB_FILES TARGET ${LINK_LIB} PROPERTY SOURCES)
-          message(STATUS "Linking Static library: ${LINK_LIB}")
+          message(STATUS "Attaching to dependent static library ${LINK_LIB} of target ${TRGT}.")
 
           foreach(LINK_LIB_FILE ${LINK_LIB_FILES})
             if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${LINK_LIB_FILE}")
@@ -1034,6 +1034,6 @@ function(llvmir_attach_library)
     set_property(SOURCE ${IN_FULL_LLVMIR_FILE} PROPERTY EXTERNAL_OBJECT TRUE)
   endforeach()
 
-# # postamble
+  ## postamble
 endfunction()
 
