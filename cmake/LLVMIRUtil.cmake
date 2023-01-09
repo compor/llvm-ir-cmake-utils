@@ -256,11 +256,11 @@ function(llvmir_attach_opt_pass_target)
   endif()
 
   if(NOT TRGT)
-    message(FATAL_ERROR "llvmir_attach_bc_target: missing TARGET option")
+    message(FATAL_ERROR "llvmir_attach_opt_pass_target: missing TARGET option")
   endif()
 
   if(NOT DEPENDS_TRGT)
-    message(FATAL_ERROR "llvmir_attach_bc_target: missing DEPENDS option")
+    message(FATAL_ERROR "llvmir_attach_opt_pass_target: missing DEPENDS option")
   endif()
 
   ## preamble
@@ -371,11 +371,11 @@ function(llvmir_attach_disassemble_target)
   endif()
 
   if(NOT TRGT)
-    message(FATAL_ERROR "llvmir_attach_bc_target: missing TARGET option")
+    message(FATAL_ERROR "llvmir_attach_disassemble_target: missing TARGET option")
   endif()
 
   if(NOT DEPENDS_TRGT)
-    message(FATAL_ERROR "llvmir_attach_bc_target: missing DEPENDS option")
+    message(FATAL_ERROR "llvmir_attach_disassemble_target: missing DEPENDS option")
   endif()
 
   ## preamble
@@ -480,11 +480,11 @@ function(llvmir_attach_assemble_target)
   endif()
 
   if(NOT TRGT)
-    message(FATAL_ERROR "llvmir_attach_bc_target: missing TARGET option")
+    message(FATAL_ERROR "llvmir_attach_assemble_target: missing TARGET option")
   endif()
 
   if(NOT DEPENDS_TRGT)
-    message(FATAL_ERROR "llvmir_attach_bc_target: missing DEPENDS option")
+    message(FATAL_ERROR "llvmir_attach_assemble_target: missing DEPENDS option")
   endif()
 
   ## preamble
@@ -589,11 +589,11 @@ function(llvmir_attach_link_target)
   endif()
 
   if(NOT TRGT)
-    message(FATAL_ERROR "llvmir_attach_bc_target: missing TARGET option")
+    message(FATAL_ERROR "llvmir_attach_link_target: missing TARGET option")
   endif()
 
   if(NOT DEPENDS_TRGT)
-    message(FATAL_ERROR "llvmir_attach_bc_target: missing DEPENDS option")
+    message(FATAL_ERROR "llvmir_attach_link_target: missing DEPENDS option")
   endif()
 
   ## preamble
@@ -814,21 +814,21 @@ function(llvmir_attach_executable)
 
     if(${ARGC} GREATER 3)
       message(FATAL_ERROR
-        "llvmir_attach_bc_target: extraneous arguments provided")
+        "llvmir_attach_executable: extraneous arguments provided")
     endif()
   else()
     if(LLVMIR_ATTACH_UNPARSED_ARGUMENTS)
       message(FATAL_ERROR
-        "llvmir_attach_bc_target: extraneous arguments provided")
+        "llvmir_attach_executable: extraneous arguments provided")
     endif()
   endif()
 
   if(NOT TRGT)
-    message(FATAL_ERROR "llvmir_attach_bc_target: missing TARGET option")
+    message(FATAL_ERROR "llvmir_attach_executable: missing TARGET option")
   endif()
 
   if(NOT DEPENDS_TRGT)
-    message(FATAL_ERROR "llvmir_attach_bc_target: missing DEPENDS option")
+    message(FATAL_ERROR "llvmir_attach_executable: missing DEPENDS option")
   endif()
 
   ## preamble
@@ -940,11 +940,11 @@ function(llvmir_attach_library)
   endif()
 
   if(NOT TRGT)
-    message(FATAL_ERROR "llvmir_attach_bc_target: missing TARGET option")
+    message(FATAL_ERROR "llvmir_attach_library: missing TARGET option")
   endif()
 
   if(NOT DEPENDS_TRGT)
-    message(FATAL_ERROR "llvmir_attach_bc_target: missing DEPENDS option")
+    message(FATAL_ERROR "llvmir_attach_library: missing DEPENDS option")
   endif()
 
   ## preamble
