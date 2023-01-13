@@ -166,8 +166,11 @@ function(llvmir_attach_bc_target)
 
   # main operations
   foreach(IN_FILE ${IN_FILES})
+    get_target_property(SOURCE_DIR ${DEPENDS_TRGT} SOURCE_DIR)
+    get_filename_component(ABS_IN_FILE ${IN_FILE} ABSOLUTE BASE_DIR ${SOURCE_DIR})
+
     # Skip header files
-    get_filename_component(FILE_EXT ${IN_FILE} LAST_EXT)
+    get_filename_component(FILE_EXT ${ABS_IN_FILE} LAST_EXT)
     string(TOLOWER ${FILE_EXT} FILE_EXT)
 
     list (FIND header_exts ${FILE_EXT} _index)
@@ -175,16 +178,15 @@ function(llvmir_attach_bc_target)
       continue()
     endif()
 
-    get_filename_component(OUTFILE ${IN_FILE} NAME)
-    get_filename_component(INFILE ${IN_FILE} ABSOLUTE)
+    get_filename_component(OUTFILE ${ABS_IN_FILE} NAME)
     set(OUT_LLVMIR_FILE "${OUTFILE}.${LLVMIR_BINARY_FMT_SUFFIX}")
     set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${OUT_LLVMIR_FILE}")
 
     # compile definitions per source file
-    llvmir_extract_compile_defs_properties(IN_FILE_DEFS ${IN_FILE})
+    llvmir_extract_compile_defs_properties(IN_FILE_DEFS ${ABS_IN_FILE})
 
     # compile flags per source file
-    llvmir_extract_lang_flags(IN_FILE_COMPILE_FLAGS ${IN_FILE})
+    llvmir_extract_lang_flags(IN_FILE_COMPILE_FLAGS ${ABS_IN_FILE})
 
     # stitch all args together
     catuniq(CURRENT_DEFS ${IN_DEFS} ${IN_FILE_DEFS})
@@ -200,9 +202,9 @@ function(llvmir_attach_bc_target)
 
     add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
       COMMAND ${LLVMIR_COMPILER}
-      ARGS ${CMD_ARGS} -c ${INFILE} -o ${FULL_OUT_LLVMIR_FILE}
-      DEPENDS ${INFILE}
-      IMPLICIT_DEPENDS ${LINKER_LANGUAGE} ${INFILE}
+      ARGS ${CMD_ARGS} -c ${ABS_IN_FILE} -o ${FULL_OUT_LLVMIR_FILE}
+      DEPENDS ${ABS_IN_FILE}
+      IMPLICIT_DEPENDS ${LINKER_LANGUAGE} ${ABS_IN_FILE}
       COMMENT "Generating LLVM bitcode ${OUT_LLVMIR_FILE}"
       VERBATIM)
 
