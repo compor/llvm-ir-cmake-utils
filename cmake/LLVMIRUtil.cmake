@@ -675,7 +675,7 @@ function(llvmir_attach_link_target)
   set_property(TARGET ${TRGT} PROPERTY LLVMIR_SHORT_NAME ${SHORT_NAME})
 
   add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
-    COMMAND llvm-link
+    COMMAND ${LLVMIR_LINK}
     ARGS
     ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS}
     -o ${FULL_OUT_LLVMIR_FILE} ${IN_FULL_LLVMIR_FILES}
