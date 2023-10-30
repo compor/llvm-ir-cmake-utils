@@ -753,14 +753,26 @@ function(llvmir_attach_obj_target)
     list(APPEND IN_FULL_LLVMIR_FILES "${IN_LLVMIR_DIR}/${IN_LLVMIR_FILE}")
   endforeach()
 
-  set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${TRGT}.o")
-  if(SHORT_NAME)
-    set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${SHORT_NAME}.o")
-  endif()
-  get_filename_component(OUT_LLVMIR_FILE ${FULL_OUT_LLVMIR_FILE} NAME)
+  foreach(IN_LLVMIR_FILE ${IN_FULL_LLVMIR_FILES})
+    get_filename_component(OUTFILE ${IN_LLVMIR_FILE} NAME_WE)
+    set(OUT_LLVMIR_FILE "${OUTFILE}.o")
+    set(FULL_OUT_LLVMIR_FILE "${WORK_DIR}/${OUT_LLVMIR_FILE}")
 
-  list(APPEND OUT_LLVMIR_FILES ${OUT_LLVMIR_FILE})
-  list(APPEND FULL_OUT_LLVMIR_FILES ${FULL_OUT_LLVMIR_FILE})
+    add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
+        COMMAND llc
+        ARGS
+          -filetype=obj
+          -relocation-model=pic
+          -o=${FULL_OUT_LLVMIR_FILE}
+          ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS}
+          ${IN_LLVMIR_FILE}
+        DEPENDS ${IN_LLVMIR_FILE}
+        COMMENT "Generating object ${OUT_LLVMIR_FILE}"
+        VERBATIM)
+
+    list(APPEND OUT_LLVMIR_FILES ${OUT_LLVMIR_FILE})
+    list(APPEND FULL_OUT_LLVMIR_FILES ${FULL_OUT_LLVMIR_FILE})
+  endforeach()
 
   # setup custom target
   add_custom_target(${TRGT} DEPENDS ${FULL_OUT_LLVMIR_FILES})
@@ -785,16 +797,6 @@ function(llvmir_attach_obj_target)
     ${LINK_INTERFACE_LIBRARIES_${CMAKE_BUILD_TYPE}})
   set_property(TARGET ${TRGT} PROPERTY EXCLUDE_FROM_ALL On)
   set_property(TARGET ${TRGT} PROPERTY LLVMIR_SHORT_NAME ${SHORT_NAME})
-
-  add_custom_command(OUTPUT ${FULL_OUT_LLVMIR_FILE}
-    COMMAND llc
-    ARGS
-    -filetype=obj
-    ${LLVMIR_ATTACH_UNPARSED_ARGUMENTS}
-    -o ${FULL_OUT_LLVMIR_FILE} ${IN_FULL_LLVMIR_FILES}
-    DEPENDS ${IN_FULL_LLVMIR_FILES}
-    COMMENT "Generating object ${OUT_LLVMIR_FILE}"
-    VERBATIM)
 
   ## postamble
 endfunction()
